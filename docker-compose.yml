@@ -1,0 +1,17 @@
+services:
+  betwfriends:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      DATABASE_URL: "file:/app/data/prod.db"
+      SESSION_SECRET: "${SESSION_SECRET:-change-me-to-a-long-random-string-at-least-32-chars}"
+      PAYMENT_MODE: "${PAYMENT_MODE:-mock}"
+      NEXT_PUBLIC_APP_URL: "${NEXT_PUBLIC_APP_URL:-http://localhost:3000}"
+      # Uncomment and set these for live Stripe payments:
+      # STRIPE_SECRET_KEY: "sk_..."
+      # STRIPE_PUBLISHABLE_KEY: "pk_..."
+      # STRIPE_WEBHOOK_SECRET: "whsec_..."
+    restart: unless-stopped
