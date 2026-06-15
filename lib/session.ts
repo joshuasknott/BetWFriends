@@ -2,16 +2,14 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { env } from "@/lib/env";
 import type { User } from "@prisma/client";
 
 export const SESSION_COOKIE = "bwf_session";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
 function getSecret(): Uint8Array {
-  const secret =
-    process.env.SESSION_SECRET ??
-    "betwfriends-dev-secret-change-me-in-production-please-use-32+chars";
-  return new TextEncoder().encode(secret);
+  return new TextEncoder().encode(env.sessionSecret);
 }
 
 export type SessionPayload = {
@@ -21,7 +19,7 @@ export type SessionPayload = {
 /** Cookies are only secure-flagged when served over a non-localhost origin,
  *  so local testing over HTTP still works. */
 async function shouldUseSecureCookie(): Promise<boolean> {
-  if (process.env.NODE_ENV !== "production") return false;
+  if (!env.isProduction) return false;
   try {
     const h = await headers();
     const host = (h.get("host") ?? "").toLowerCase();

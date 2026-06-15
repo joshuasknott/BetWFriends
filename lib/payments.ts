@@ -1,19 +1,15 @@
 import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
+import { env, isLivePayments } from "@/lib/env";
 
 /** Are we in mock (demo) payment mode? */
 export function isMockPayments(): boolean {
-  return (
-    process.env.PAYMENT_MODE !== "live" ||
-    !process.env.STRIPE_SECRET_KEY ||
-    process.env.STRIPE_SECRET_KEY.trim() === ""
-  );
+  return !isLivePayments();
 }
 
 function getStripe(): Stripe {
-  const key = process.env.STRIPE_SECRET_KEY;
-  if (!key) throw new Error("STRIPE_SECRET_KEY is not configured");
-  return new Stripe(key);
+  if (!env.stripeSecretKey) throw new Error("STRIPE_SECRET_KEY is not configured");
+  return new Stripe(env.stripeSecretKey);
 }
 
 export type TopUpResult =
