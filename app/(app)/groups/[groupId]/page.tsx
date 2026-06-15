@@ -6,6 +6,7 @@ import { AvatarStack, Avatar } from "@/components/brand";
 import { CopyButton } from "@/components/copy-button";
 import { BetCard } from "@/components/bet-card";
 import { LeaveGroupButton } from "@/components/leave-group-button";
+import { GroupSettings } from "@/components/group-settings";
 import { relativeTime, formatMoney } from "@/lib/utils";
 import { computeLeaderboard } from "@/lib/leaderboard";
 
@@ -116,6 +117,19 @@ export default async function GroupPage({
           </div>
         </div>
       </div>
+
+      {/* Group settings (creator only) */}
+      {group.createdById === user.id && (
+        <div className="mt-6">
+          <GroupSettings
+            groupId={group.id}
+            initialName={group.name}
+            initialDescription={group.description}
+            initialEmoji={group.emoji}
+            initialColor={group.color}
+          />
+        </div>
+      )}
 
       {/* Open bets */}
       <section className="mt-10">
