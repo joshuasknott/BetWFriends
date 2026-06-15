@@ -1,26 +1,240 @@
 @import "tailwindcss";
 
+/* ----------------------------------------------------------------------------
+   BetWFriends design system
+   Polished, friendly, accessible, colourful.
+---------------------------------------------------------------------------- */
+
+@theme {
+  /* Brand palette — playful violet with vibrant friends */
+  --color-brand-50: #f3f0ff;
+  --color-brand-100: #e9e2ff;
+  --color-brand-200: #d5c9ff;
+  --color-brand-300: #b7a3ff;
+  --color-brand-400: #9676ff;
+  --color-brand-500: #7c3aed;
+  --color-brand-600: #6d28d9;
+  --color-brand-700: #5b21b6;
+  --color-brand-800: #4c1d95;
+  --color-brand-900: #3b0764;
+
+  /* Accent colours for groups & bets */
+  --color-berry: #db2777;
+  --color-coral: #fb7185;
+  --color-amber: #f59e0b;
+  --color-lime: #65a30d;
+  --color-teal: #0d9488;
+  --color-sky: #0284c7;
+  --color-grape: #9333ea;
+
+  --color-ink: #1a1033;
+  --color-ink-soft: #5b5470;
+  --color-canvas: #faf8ff;
+  --color-surface: #ffffff;
+
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
+  --radius-3xl: 1.75rem;
+
+  --font-sans: var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif;
+
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-pop: pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-slide-up: slideUp 0.4s ease-out;
+  --animate-shimmer: shimmer 2s linear infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+@keyframes pop {
+  0% { transform: scale(0.96); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes slideUp {
+  0% { transform: translateY(16px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+/* ----------------------------------------------------------------------------
+   Base
+---------------------------------------------------------------------------- */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fffefe;
+  --foreground: #1a1033;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Accessible focus ring */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid var(--color-brand-500);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Pleasant scrollbar */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-brand-200);
+  border: 3px solid var(--background);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-brand-300);
+}
+
+/* Selection */
+::selection {
+  background: var(--color-brand-300);
+  color: var(--color-brand-900);
+}
+
+/* ----------------------------------------------------------------------------
+   Component utilities
+---------------------------------------------------------------------------- */
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 font-semibold rounded-2xl
+           px-5 py-3 transition-all duration-150 active:scale-[0.97]
+           disabled:opacity-50 disabled:pointer-events-none select-none;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 font-semibold rounded-2xl
+           px-5 py-3 transition-all duration-150 active:scale-[0.97]
+           disabled:opacity-50 disabled:pointer-events-none select-none text-white;
+    background-image: linear-gradient(
+      135deg,
+      var(--color-brand-500),
+      var(--color-grape)
+    );
+    box-shadow: 0 8px 20px -8px var(--color-brand-500);
+  }
+  .btn-primary:hover {
+    box-shadow: 0 12px 28px -8px var(--color-brand-500);
+    filter: brightness(1.05);
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 font-semibold rounded-2xl
+           px-5 py-3 transition-all duration-150 active:scale-[0.97]
+           disabled:opacity-50 disabled:pointer-events-none select-none
+           bg-white text-brand-700 border-2 border-brand-100 hover:border-brand-300 hover:bg-brand-50;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 font-semibold rounded-2xl
+           px-5 py-3 transition-all duration-150 active:scale-[0.97]
+           disabled:opacity-50 disabled:pointer-events-none select-none
+           text-ink-soft hover:bg-brand-50 hover:text-brand-700;
+  }
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 font-semibold rounded-2xl
+           px-5 py-3 transition-all duration-150 active:scale-[0.97]
+           disabled:opacity-50 disabled:pointer-events-none select-none
+           bg-rose-500 text-white hover:bg-rose-600;
+  }
+
+  .card {
+    @apply bg-white rounded-[1.5rem] ring-1 ring-brand-100/70
+           shadow-[0_24px_70px_-32px_rgba(45,27,105,0.32)];
+  }
+
+  /* Tighter card variant for stacked lists */
+  .card-compact {
+    @apply bg-white rounded-[1.25rem] ring-1 ring-brand-100/60
+           shadow-[0_18px_50px_-30px_rgba(45,27,105,0.28)];
+  }
+
+  .input {
+    @apply w-full rounded-2xl border-2 border-brand-100 bg-white px-4 py-3
+           text-ink placeholder:text-ink-soft/50
+           focus:border-brand-400 focus:outline-none transition-colors;
+  }
+
+  .label {
+    @apply block text-xs font-extrabold uppercase tracking-[0.12em] text-ink-soft mb-2;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold;
+  }
+
+  /* Marketing-aligned wide container */
+  .container-app {
+    @apply mx-auto w-full max-w-[1180px] px-5 sm:px-8 lg:px-12;
+  }
+
+  /* Eyebrow kicker used above big headings */
+  .eyebrow {
+    @apply text-xs font-extrabold uppercase tracking-[0.2em] text-brand-600;
+  }
+
+  /* Page display heading — marketing scale */
+  .h-display {
+    @apply text-4xl font-black leading-[1.02] tracking-[-0.055em] sm:text-5xl;
+  }
+
+  .h-section {
+    @apply text-[11px] font-extrabold uppercase tracking-[0.18em] text-ink-soft;
+  }
+}
+
+/* Gradient text helper */
+.text-gradient {
+  background: linear-gradient(
+    135deg,
+    var(--color-brand-500),
+    var(--color-berry)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* Mesh background blob */
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
