@@ -12,8 +12,7 @@
  * cookie, so CSRF does not apply.
  */
 
-import { createHash, randomBytes } from "node:crypto";
-
+// --- Shared constants (safe for both Edge/Node and browser) ---
 export const CSRF_COOKIE = "bwf_csrf";
 export const CSRF_HEADER = "x-csrf-token";
 
@@ -29,22 +28,4 @@ export function isMutatingMethod(method: string): boolean {
 
 export function isCsrfExempt(pathname: string): boolean {
   return EXEMPT_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"));
-}
-
-/** Generate a cryptographically random CSRF token (32 bytes, base64url). */
-export function generateCsrfToken(): string {
-  return randomBytes(32).toString("base64url");
-}
-
-/**
- * Validate the CSRF token on a mutating request.
- * Returns true if the header token matches the cookie token (constant-time).
- */
-export function validateCsrf(headerToken: string | null, cookieToken: string | undefined): boolean {
-  if (!headerToken || !cookieToken) return false;
-  if (headerToken.length !== cookieToken.length) return false;
-  // Constant-time comparison to avoid timing attacks.
-  const a = createHash("sha256").update(headerToken).digest();
-  const b = createHash("sha256").update(cookieToken).digest();
-  return a.equals(b);
 }

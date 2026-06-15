@@ -2,11 +2,13 @@ import { NextResponse, type NextRequest } from "next/server";
 import { env } from "@/lib/env";
 import {
   CSRF_COOKIE,
-  CSRF_HEADER,
   generateCsrfToken,
+  validateCsrf,
+} from "@/lib/csrf-server";
+import {
+  CSRF_HEADER,
   isCsrfExempt,
   isMutatingMethod,
-  validateCsrf,
 } from "@/lib/csrf";
 import { enforceRateLimit } from "@/lib/rate-limit";
 
