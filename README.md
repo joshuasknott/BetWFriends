@@ -1,36 +1,115 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# betwfriends
 
-## Getting Started
+BetWFriends is a friends-only social betting app for low-stakes everyday wagers.
+Groups can create private betting circles, place stakes from an internal wallet,
+and settle outcomes transparently. There is no bookmaker, no house edge, and no
+rake.
 
-First, run the development server:
+## What It Does
+
+- Create private groups and invite friends with shareable codes.
+- Propose playful bets with stakes, deadlines, and custom Yes/No-style sides.
+- Place, switch, or withdraw wagers while a bet is open.
+- Settle bets fairly, splitting the pot among winners or refunding everyone on a
+  void/cancelled result.
+- Manage a wallet with mock demo top-ups or live Stripe top-ups.
+- Browse a polished, responsive marketing page and authenticated app UI.
+
+## Stack
+
+- Next.js 16 App Router, React 19, TypeScript
+- Tailwind CSS v4 with CSS-based design tokens
+- Prisma 7 and SQLite through `@prisma/adapter-better-sqlite3`
+- JWT sessions with `jose`, password hashing with `bcryptjs`
+- Stripe for live wallet top-ups, with mock mode for local demos
+
+## Quick Start
 
 ```bash
+npm install
+cp .env.example .env
+npm run db:migrate
+npm run seed
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The app runs at [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Demo Accounts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+After seeding, sign in with any of these accounts. The password is `password`.
 
-## Learn More
+| Email | Person |
+| --- | --- |
+| `josh@example.com` | Josh Bennett |
+| `mark@example.com` | Mark Quinn |
+| `jenny@example.com` | Jenny Lee |
+| `sam@example.com` | Sam Okafor |
+| `alex@example.com` | Alex Day |
+| `priya@example.com` | Priya Shah |
 
-To learn more about Next.js, take a look at the following resources:
+Demo invite codes:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `LUCKY-FOX-42` for Saturday Squad
+- `BOLD-BEAR-77` for Flat 4B
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Environment
 
-## Deploy on Vercel
+Use `.env.example` as the starting point.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+DATABASE_URL="file:./dev.db"
+SESSION_SECRET="replace-with-a-long-random-secret"
+PAYMENT_MODE="mock"
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Mock mode makes wallet top-ups instant and free for local demos. To enable live
+Stripe top-ups, set:
+
+```bash
+PAYMENT_MODE="live"
+STRIPE_SECRET_KEY="sk_..."
+STRIPE_PUBLISHABLE_KEY="pk_..."
+STRIPE_WEBHOOK_SECRET="whsec_..."
+```
+
+Register a Stripe webhook for `payment_intent.succeeded` at
+`/api/stripe/webhook`.
+
+## Useful Commands
+
+```bash
+npm run dev        # start the local Next.js server
+npm run build      # production build
+npm run lint       # run ESLint
+npm run db:migrate # apply Prisma migrations
+npm run seed       # load demo users, groups, bets, and wallet data
+```
+
+## Project Structure
+
+```text
+app/
+  page.tsx                public marketing page
+  login/, register/       auth screens
+  (app)/                  authenticated routes
+    dashboard/            group overview and live bets
+    groups/               group creation, joining, detail, and bet creation
+    bets/                 bet detail, wagering, settlement
+    wallet/               balance, top-up, transaction history
+    profile/              account and betting stats
+  api/                    auth, groups, bets, wallet, and Stripe routes
+components/               shared UI, branding, bet cards, forms
+lib/                      Prisma, sessions, validation, payments, bet logic
+prisma/                   schema, migrations, seed data
+public/brand/             logo assets
+```
+
+## Product Notes
+
+BetWFriends uses a wallet model. Individual bets are internal ledger transfers,
+not card payments, so release does not need a minimum bet amount. Stripe fees
+apply only to top-ups, which is why wallet top-ups enforce a minimum amount.
+
+This product is intended for small, social wagers between people who know each
+other. Keep it friendly. 18+ only.
