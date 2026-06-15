@@ -1,0 +1,109 @@
+// BetWFriends data model
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  avatarColor  String   @default("#7c3aed")
+  balance      Int      @default(0) // stored in pence (£0.01)
+  createdAt    DateTime @default(now())
+
+  memberships      GroupMember[]
+  createdGroups    Group[]
+  createdBets      Bet[]       @relation("BetCreator")
+  wagers       Wager[]
+  transactions Transaction[]
+}
+
+model Group {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  color       String   @default("#7c3aed")
+  emoji       String   @default("🎲")
+  inviteCode  String   @unique @default(cuid())
+  createdAt   DateTime @default(now())
+  createdById String
+
+  createdBy User          @relation(fields: [createdById], references: [id])
+  members   GroupMember[]
+  bets      Bet[]
+}
+
+model GroupMember {
+  id        String   @id @default(cuid())
+  userId    String
+  groupId   String
+  joinedAt  DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, groupId])
+}
+
+// A proposition bet within a group. e.g. "Mark will blackout tonight"
+model Bet {
+  id          String    @id @default(cuid())
+  groupId     String
+  creatorId   String
+  title       String
+  description String?
+  amount      Int // stake per wager in pence
+  status      String    @default("open") // open | closed | settled | cancelled
+  // Which side won once settled (null until resolved)
+  outcome     String? // matches a BetSide label
+  createdAt   DateTime  @default(now())
+  closesAt    DateTime
+  settledAt   DateTime?
+
+  group   Group   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  creator User    @relation("BetCreator", fields: [creatorId], references: [id])
+  sides   BetSide[]
+  wagers  Wager[]
+}
+
+model BetSide {
+  id    String @id @default(cuid())
+  betId String
+  label String // e.g. "Yes" / "No"
+
+  bet    Bet     @relation(fields: [betId], references: [id], onDelete: Cascade)
+  wagers Wager[]
+}
+
+model Wager {
+  id        String   @id @default(cuid())
+  betId     String
+  sideId    String
+  userId    String
+  amount    Int
+  createdAt DateTime @default(now())
+
+  bet  Bet @relation(fields: [betId], references: [id], onDelete: Cascade)
+  side BetSide @relation(fields: [sideId], references: [id], onDelete: Cascade)
+  user User   @relation(fields: [userId], references: [id])
+
+  @@unique([betId, userId]) // one wager per user per bet
+}
+
+model Transaction {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String // topup | stake | payout | withdrawal
+  amount    Int // pence; positive = credit, negative = debit
+  note      String
+  reference String? // stripe payment intent id etc.
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
