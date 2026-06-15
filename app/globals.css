@@ -228,6 +228,25 @@ body {
   pointer-events: none;
 }
 
+/* ----------------------------------------------------------------------------
+   Legal page prose styling
+---------------------------------------------------------------------------- */
+.legal-prose ul {
+  margin: 0;
+  padding: 0;
+}
+.legal-prose a {
+  color: var(--color-brand-600);
+  font-weight: 600;
+}
+.legal-prose strong {
+  color: var(--color-ink);
+  font-weight: 700;
+}
+.legal-prose code {
+  font-family: ui-monospace, "SF Mono", Monaco, monospace;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
