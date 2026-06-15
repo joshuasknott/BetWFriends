@@ -16,8 +16,25 @@ export const metadata: Metadata = {
   description:
     "BetWFriends is the friendly way to bet on everyday life with your friends. Create groups, make playful bets, and settle up — no casino required.",
   applicationName: "BetWFriends",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "BetWFriends",
+  },
   icons: {
-    icon: [{ url: "/brand/betwfriends-logo.png", type: "image/png" }],
+    icon: [
+      { url: "/brand/betwfriends-logo.png", type: "image/png" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    apple: [{ url: "/brand/betwfriends-logo.png", sizes: "180x180" }],
+  },
+  openGraph: {
+    title: "BetWFriends — Bet on life, with your mates",
+    description:
+      "Friends-only social betting. Low stakes. Big banter. No bookies. No BS.",
+    type: "website",
+    siteName: "BetWFriends",
   },
 };
 
@@ -25,6 +42,7 @@ export const viewport: Viewport = {
   themeColor: "#7c3aed",
   width: "device-width",
   initialScale: 1,
+  maximumScale: 5,
 };
 
 export default function RootLayout({

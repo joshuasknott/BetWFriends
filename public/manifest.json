@@ -1,0 +1,37 @@
+{
+  "name": "BetWFriends — Bet on life, with your mates",
+  "short_name": "BetWFriends",
+  "description": "Friends-only social betting app for low-stakes everyday wagers. No bookies. No house edge.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#fffefe",
+  "theme_color": "#7c3aed",
+  "orientation": "portrait",
+  "categories": ["social", "entertainment", "lifestyle"],
+  "icons": [
+    {
+      "src": "/brand/betwfriends-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/brand/betwfriends-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/brand/betwfriends-logo.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

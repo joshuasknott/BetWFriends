@@ -45,3 +45,12 @@ next-env.d.ts
 *.db
 *.db-journal
 prisma/dev.db*
+
+# test artifacts
+/screenshots/
+/test-results/
+/playwright-report/
+/coverage/
+
+# tailwind install workaround temp
+/.tailwind-tmp/
