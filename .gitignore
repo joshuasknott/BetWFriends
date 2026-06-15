@@ -54,3 +54,6 @@ prisma/dev.db*
 
 # tailwind install workaround temp
 /.tailwind-tmp/
+
+# package manager lockfile - we use pnpm
+/package-lock.json
