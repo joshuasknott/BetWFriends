@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Logo, Avatar } from "@/components/brand";
+import { api } from "@/lib/api-client";
 import { formatMoneyShort } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -27,7 +28,7 @@ export function AppHeader({
 
   async function logout() {
     setLoggingOut(true);
-    await fetch("/api/auth/logout", { method: "POST" });
+    await api("/api/auth/logout", { method: "POST" });
     router.push("/");
     router.refresh();
   }

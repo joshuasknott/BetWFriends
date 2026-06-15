@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Avatar, Spinner } from "@/components/brand";
+import { api } from "@/lib/api-client";
 import {
   formatMoney,
   formatMoneyShort,
@@ -58,7 +59,7 @@ export function BetDetailClient({
   const [showResolve, setShowResolve] = useState(false);
 
   const refresh = useCallback(async () => {
-    const res = await fetch(`/api/bets/${betId}`);
+    const res = await api(`/api/bets/${betId}`);
     if (res.ok) {
       const json = await res.json();
       setData(json);
@@ -109,10 +110,9 @@ export function BetDetailClient({
     }
     setBusy(true);
     try {
-      const res = await fetch(`/api/bets/${betId}/wager`, {
+      const res = await api(`/api/bets/${betId}/wager`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sideId }),
+        body: { sideId },
       });
       const json = await res.json();
       if (!res.ok) {
@@ -134,7 +134,7 @@ export function BetDetailClient({
     setError(null);
     setBusy(true);
     try {
-      const res = await fetch(`/api/bets/${betId}/wager`, { method: "DELETE" });
+      const res = await api(`/api/bets/${betId}/wager`, { method: "DELETE" });
       const json = await res.json();
       if (!res.ok) {
         setError(json.error ?? "Couldn't pull out");
@@ -153,10 +153,9 @@ export function BetDetailClient({
     setError(null);
     setBusy(true);
     try {
-      const res = await fetch(`/api/bets/${betId}/resolve`, {
+      const res = await api(`/api/bets/${betId}/resolve`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ winningSideId }),
+        body: { winningSideId },
       });
       const json = await res.json();
       if (!res.ok) {
@@ -179,7 +178,7 @@ export function BetDetailClient({
     setError(null);
     setBusy(true);
     try {
-      const res = await fetch(`/api/bets/${betId}/cancel`, { method: "POST" });
+      const res = await api(`/api/bets/${betId}/cancel`, { method: "POST" });
       const json = await res.json();
       if (!res.ok) {
         setError(json.error ?? "Couldn't cancel");

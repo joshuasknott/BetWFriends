@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Logo, BrandBlobs, Spinner, Underline } from "@/components/brand";
+import { api } from "@/lib/api-client";
 
 type Mode = "login" | "register";
 
@@ -24,10 +25,9 @@ export function AuthForm({ mode }: { mode: Mode }) {
     form.forEach((v, k) => (payload[k] = String(v)));
 
     try {
-      const res = await fetch(`/api/auth/${mode}`, {
+      const res = await api(`/api/auth/${mode}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: payload,
       });
       const data = await res.json();
       if (!res.ok) {

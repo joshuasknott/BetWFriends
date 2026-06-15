@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Spinner, Underline } from "@/components/brand";
+import { api } from "@/lib/api-client";
 
 const EMOJIS = [
   "🎲", "🍺", "⚽", "🎮", "🎸", "🏆", "🍕", "🎬",
@@ -37,10 +38,9 @@ export default function NewGroupPage() {
     };
 
     try {
-      const res = await fetch("/api/groups", {
+      const res = await api("/api/groups", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: payload,
       });
       const data = await res.json();
       if (!res.ok) {

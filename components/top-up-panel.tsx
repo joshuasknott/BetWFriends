@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/brand";
+import { api } from "@/lib/api-client";
 import { formatMoney } from "@/lib/utils";
 
 const QUICK_AMOUNTS = [500, 1000, 2000, 5000]; // pence
@@ -17,10 +18,9 @@ export function TopUpPanel({ mockMode }: { mockMode: boolean }) {
     setError(null);
     setLoading(true);
     try {
-      const res = await fetch("/api/wallet/topup", {
+      const res = await api("/api/wallet/topup", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: amountPence }),
+        body: { amount: amountPence },
       });
       const data = await res.json();
       if (!res.ok) {

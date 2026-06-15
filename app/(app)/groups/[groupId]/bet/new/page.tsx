@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { Spinner, Underline } from "@/components/brand";
+import { api } from "@/lib/api-client";
 import { formatMoney } from "@/lib/utils";
 
 const DURATIONS = [
@@ -52,10 +53,9 @@ export default function NewBetPage() {
 
     setLoading(true);
     try {
-      const res = await fetch("/api/bets", {
+      const res = await api("/api/bets", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        body: {
           groupId,
           title,
           description,
@@ -63,7 +63,7 @@ export default function NewBetPage() {
           durationHours: duration,
           yesLabel: yesLabel.trim() || "Yes",
           noLabel: noLabel.trim() || "No",
-        }),
+        },
       });
       const data = await res.json();
       if (!res.ok) {

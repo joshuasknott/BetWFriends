@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Spinner, Underline } from "@/components/brand";
+import { api } from "@/lib/api-client";
 
 export default function JoinGroupPage() {
   const router = useRouter();
@@ -19,10 +20,9 @@ export default function JoinGroupPage() {
     const inviteCode = String(form.get("inviteCode") ?? "").trim().toUpperCase();
 
     try {
-      const res = await fetch("/api/groups/join", {
+      const res = await api("/api/groups/join", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ inviteCode }),
+        body: { inviteCode },
       });
       const data = await res.json();
       if (!res.ok) {

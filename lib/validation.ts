@@ -9,7 +9,7 @@ export const registerSchema = z
   .object({
     name: z.string().min(1, "Tell us your name").max(40, "That's a bit long"),
     email: emailSchema,
-    password: z.string().min(6, "At least 6 characters"),
+    password: z.string().min(8, "At least 8 characters"),
   })
   .required();
 
