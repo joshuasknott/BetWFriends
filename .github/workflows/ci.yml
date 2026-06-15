@@ -1,0 +1,115 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-typecheck-test:
+    name: Lint, Type Check & Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm exec prisma generate
+        env:
+          DATABASE_URL: "file:./dev.db"
+
+      - name: Run database migrations
+        run: pnpm exec prisma migrate deploy
+        env:
+          DATABASE_URL: "file:./dev.db"
+
+      - name: Seed database
+        run: pnpm run seed
+        env:
+          DATABASE_URL: "file:./dev.db"
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Type check
+        run: pnpm exec tsc --noEmit
+
+      - name: Unit tests
+        run: pnpm run test
+
+      - name: Build
+        run: pnpm run build
+        env:
+          DATABASE_URL: "file:./dev.db"
+          SESSION_SECRET: "ci-test-secret-at-least-32-characters-long-xxxxx"
+          PAYMENT_MODE: "mock"
+
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: lint-typecheck-test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm exec prisma generate
+        env:
+          DATABASE_URL: "file:./dev.db"
+
+      - name: Run database migrations
+        run: pnpm exec prisma migrate deploy
+        env:
+          DATABASE_URL: "file:./dev.db"
+
+      - name: Seed database
+        run: pnpm run seed
+        env:
+          DATABASE_URL: "file:./dev.db"
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run E2E tests
+        run: pnpm run test:e2e --project=chromium-desktop
+        env:
+          DATABASE_URL: "file:./dev.db"
+          SESSION_SECRET: "ci-e2e-test-secret-at-least-32-characters-long-x"
+          PAYMENT_MODE: "mock"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

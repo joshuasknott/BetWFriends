@@ -8,12 +8,10 @@ import type { Metadata } from "next";
  */
 export function LegalPage({
   title,
-  description,
   updated,
   children,
 }: {
   title: string;
-  description?: string;
   updated?: string;
   children: React.ReactNode;
 }) {
@@ -82,10 +80,10 @@ export function LegalSection({
   );
 }
 
-export function legalMetadata(title: string, description: string): Metadata {
+export function legalMetadata(title: string, description?: string): Metadata {
   return {
     title,
-    description,
+    ...(description ? { description } : {}),
     robots: { index: true, follow: true },
   };
 }
