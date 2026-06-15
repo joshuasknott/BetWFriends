@@ -1,7 +1,9 @@
-import Link from "next/link";
 import { requireUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { Avatar, Underline } from "@/components/brand";
+import { ProfileEditor } from "@/components/profile-editor";
+import { PasswordChanger } from "@/components/password-changer";
+import { AccountDangerZone } from "@/components/account-danger-zone";
 import { formatDate, formatMoney } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -52,12 +54,6 @@ export default async function ProfilePage() {
             <div className="mt-1 text-3xl font-black text-brand-700">
               {formatMoney(user.balance)}
             </div>
-            <Link
-              href="/wallet"
-              className="mt-2 inline-block text-xs font-black text-brand-600 hover:underline"
-            >
-              Manage wallet →
-            </Link>
           </div>
         </div>
 
@@ -79,13 +75,16 @@ export default async function ProfilePage() {
               </div>
             </div>
           </div>
-
-          <div className="mt-6 rounded-[1.1rem] border-2 border-dashed border-brand-200 p-5 text-center text-sm font-semibold text-ink-soft">
-            💡 Tip: invite more friends to your groups to keep the banter going.
-            Share your group invite codes from each group page.
-          </div>
         </div>
       </div>
+
+      {/* Settings sections */}
+      <div className="mt-8 grid gap-6 lg:grid-cols-2">
+        <ProfileEditor name={user.name} avatarColor={user.avatarColor} />
+        <PasswordChanger />
+      </div>
+
+      <AccountDangerZone />
     </div>
   );
 }
