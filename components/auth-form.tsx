@@ -13,7 +13,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isRegister = mode === "register";
+  const isRegister = mode === "login";
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -23,6 +23,14 @@ export function AuthForm({ mode }: { mode: Mode }) {
     const form = new FormData(e.currentTarget);
     const payload: Record<string, string> = {};
     form.forEach((v, k) => (payload[k] = String(v)));
+
+    // 18+ age gate (register only)
+    if (isRegister && payload.ageConfirm !== "on") {
+      setError("You must confirm that you are 18 or over to create an account.");
+      setLoading(false);
+      return;
+    }
+    delete payload.ageConfirm;
 
     try {
       const res = await api(`/api/auth/${mode}`, {
@@ -123,12 +131,34 @@ export function AuthForm({ mode }: { mode: Mode }) {
                 name="password"
                 type="password"
                 autoComplete={isRegister ? "new-password" : "current-password"}
-                placeholder={isRegister ? "At least 6 characters" : "••••••••"}
+                placeholder={isRegister ? "At least 8 characters" : "••••••••"}
                 className="input"
                 required
-                minLength={isRegister ? 6 : undefined}
+                minLength={isRegister ? 8 : undefined}
               />
             </div>
+
+            {isRegister && (
+              <label className="flex cursor-pointer items-start gap-2.5 rounded-2xl bg-brand-50 px-4 py-3 text-sm font-semibold text-ink">
+                <input
+                  type="checkbox"
+                  name="ageConfirm"
+                  className="mt-0.5 h-4 w-4 shrink-0 rounded accent-brand-500"
+                  required
+                />
+                <span>
+                  I confirm I am <strong>18 or over</strong> and agree to the{" "}
+                  <Link href="/legal/terms" className="font-black text-brand-600 hover:underline">
+                    Terms of Service
+                  </Link>{" "}
+                  and{" "}
+                  <Link href="/legal/privacy" className="font-black text-brand-600 hover:underline">
+                    Privacy Policy
+                  </Link>
+                  .
+                </span>
+              </label>
+            )}
 
             <button
               type="submit"
@@ -153,7 +183,11 @@ export function AuthForm({ mode }: { mode: Mode }) {
         </div>
 
         <p className="mt-6 text-center text-xs font-semibold text-ink-soft">
-          Keep it friendly. Play with people you know. 18+ only.
+          Keep it friendly. Play with people you know.{" "}
+          <Link href="/legal/responsible-play" className="text-brand-600 hover:underline">
+            18+ only · Play responsibly
+          </Link>
+          .
         </p>
       </div>
     </div>

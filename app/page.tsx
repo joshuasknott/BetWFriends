@@ -513,6 +513,9 @@ export default async function LandingPage() {
               {link.label}
             </a>
           ))}
+          <a href="/legal/privacy">Privacy</a>
+          <a href="/legal/terms">Terms</a>
+          <a href="/legal/responsible-play">Responsible play</a>
         </div>
         <p>18+ · Play responsibly · © {new Date().getFullYear()} BetWFriends</p>
       </footer>
