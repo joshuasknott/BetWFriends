@@ -76,5 +76,5 @@ export default async function BetPage({
     isCreator: bet.creator.id === user.id,
   };
 
-  return <BetDetailClient betId={betId} initial={initial} />;
+  return <BetDetailClient betId={betId} initial={initial} currentUserId={user.id} />;
 }

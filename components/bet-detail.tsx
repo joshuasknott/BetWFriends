@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Avatar, Spinner } from "@/components/brand";
 import { api } from "@/lib/api-client";
+import { BetComments } from "@/components/bet-comments";
 import {
   formatMoney,
   formatMoneyShort,
@@ -46,9 +47,11 @@ type BetData = {
 export function BetDetailClient({
   betId,
   initial,
+  currentUserId,
 }: {
   betId: string;
   initial: BetData;
+  currentUserId: string;
 }) {
   const router = useRouter();
   const [data, setData] = useState<BetData>(initial);
@@ -470,6 +473,10 @@ export function BetDetailClient({
                 </div>
               )}
             </div>
+          )}
+          {/* Banter / comments */}
+          {!isCancelled && (
+            <BetComments betId={betId} currentUserId={currentUserId} />
           )}
         </div>
 

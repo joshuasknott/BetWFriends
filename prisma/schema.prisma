@@ -22,6 +22,7 @@ model User {
   createdBets      Bet[]       @relation("BetCreator")
   wagers       Wager[]
   transactions Transaction[]
+  comments     Comment[]
 }
 
 model Group {
@@ -70,6 +71,7 @@ model Bet {
   creator User    @relation("BetCreator", fields: [creatorId], references: [id])
   sides   BetSide[]
   wagers  Wager[]
+  comments Comment[]
 }
 
 model BetSide {
@@ -94,6 +96,20 @@ model Wager {
   user User   @relation(fields: [userId], references: [id])
 
   @@unique([betId, userId]) // one wager per user per bet
+}
+
+// Banter / comments on a bet — the social layer.
+model Comment {
+  id        String   @id @default(cuid())
+  betId     String
+  userId    String
+  text      String
+  createdAt DateTime @default(now())
+
+  bet  Bet  @relation(fields: [betId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([betId, createdAt])
 }
 
 model Transaction {
