@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useMutation } from "convex/react";
 import { Spinner, Underline } from "@/components/brand";
-import { api } from "@/lib/api-client";
+import { api } from "@/convex/_generated/api";
 
 export default function JoinGroupPage() {
   const router = useRouter();
+  const joinGroup = useMutation(api.groups.joinGroup);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,20 +22,11 @@ export default function JoinGroupPage() {
     const inviteCode = String(form.get("inviteCode") ?? "").trim().toUpperCase();
 
     try {
-      const res = await api("/api/groups/join", {
-        method: "POST",
-        body: { inviteCode },
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "Could not join group");
-        setLoading(false);
-        return;
-      }
-      router.push(`/groups/${data.groupId}`);
+      const result = await joinGroup({ inviteCode });
+      router.push(`/groups/${result.groupId}`);
       router.refresh();
-    } catch {
-      setError("Network error — please try again");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Network error — please try again");
       setLoading(false);
     }
   }

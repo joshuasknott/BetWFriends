@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useMutation } from "convex/react";
 import { Spinner, Underline } from "@/components/brand";
-import { api } from "@/lib/api-client";
+import { api } from "@/convex/_generated/api";
 
 const EMOJIS = [
   "🎲", "🍺", "⚽", "🎮", "🎸", "🏆", "🍕", "🎬",
@@ -18,6 +19,7 @@ const COLORS = [
 
 export default function NewGroupPage() {
   const router = useRouter();
+  const createGroup = useMutation(api.groups.createGroup);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [emoji, setEmoji] = useState("🎲");
@@ -30,28 +32,19 @@ export default function NewGroupPage() {
     setLoading(true);
 
     const form = new FormData(e.currentTarget);
-    const payload = {
-      name: String(form.get("name") ?? ""),
-      description: String(form.get("description") ?? ""),
-      emoji,
-      color,
-    };
+    const description = String(form.get("description") ?? "");
 
     try {
-      const res = await api("/api/groups", {
-        method: "POST",
-        body: payload,
+      const result = await createGroup({
+        name: String(form.get("name") ?? ""),
+        description: description || undefined,
+        emoji,
+        color,
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "Could not create group");
-        setLoading(false);
-        return;
-      }
-      router.push(`/groups/${data.groupId}`);
+      router.push(`/groups/${result.groupId}`);
       router.refresh();
-    } catch {
-      setError("Network error — please try again");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Network error — please try again");
       setLoading(false);
     }
   }

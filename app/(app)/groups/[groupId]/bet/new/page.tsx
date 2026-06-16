@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
+import { useMutation } from "convex/react";
 import { Spinner, Underline } from "@/components/brand";
-import { api } from "@/lib/api-client";
+import { api } from "@/convex/_generated/api";
 import { formatMoney } from "@/lib/utils";
 
 const DURATIONS = [
@@ -22,6 +23,7 @@ export default function NewBetPage() {
   const router = useRouter();
   const params = useParams<{ groupId: string }>();
   const groupId = params.groupId ?? "";
+  const createBet = useMutation(api.bets.createBet);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [title, setTitle] = useState("");
@@ -53,28 +55,19 @@ export default function NewBetPage() {
 
     setLoading(true);
     try {
-      const res = await api("/api/bets", {
-        method: "POST",
-        body: {
-          groupId,
-          title,
-          description,
-          amount: amountPence,
-          durationHours: duration,
-          yesLabel: yesLabel.trim() || "Yes",
-          noLabel: noLabel.trim() || "No",
-        },
+      const result = await createBet({
+        groupId: groupId as any,
+        title,
+        description: description || undefined,
+        amount: amountPence,
+        durationHours: duration,
+        yesLabel: yesLabel.trim() || "Yes",
+        noLabel: noLabel.trim() || "No",
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "Could not create bet");
-        setLoading(false);
-        return;
-      }
-      router.push(`/bets/${data.betId}`);
+      router.push(`/bets/${result.betId}`);
       router.refresh();
-    } catch {
-      setError("Network error — please try again");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Network error — please try again");
       setLoading(false);
     }
   }
