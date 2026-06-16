@@ -1,40 +1,24 @@
 import Link from "next/link";
-import { requireUser } from "@/lib/session";
-import { prisma } from "@/lib/prisma";
+import { fetchQuery } from "convex/nextjs";
+import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
 import { AvatarStack, Underline } from "@/components/brand";
 import { relativeTime, formatMoneyShort } from "@/lib/utils";
+import { api } from "@/convex/_generated/api";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const user = await requireUser();
+  const token = await convexAuthNextjsToken();
+  const opts = token ? { token } : {};
 
-  const [groups, activeBets] = await Promise.all([
-    prisma.group.findMany({
-      where: { members: { some: { userId: user.id } } },
-      include: {
-        members: { include: { user: true } },
-        bets: {
-          where: { status: { in: ["open", "closed"] } },
-          orderBy: { createdAt: "desc" },
-        },
-        createdBy: true,
-      },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.bet.findMany({
-      where: {
-        status: "open",
-        group: { members: { some: { userId: user.id } } },
-      },
-      include: { group: true, wagers: true },
-      orderBy: { closesAt: "asc" },
-      take: 5,
-    }),
+  const [me, groups, activeBets] = await Promise.all([
+    fetchQuery(api.profile.getMe, {}, opts),
+    fetchQuery(api.groups.listMyGroups, {}, opts),
+    fetchQuery(api.bets.listActiveBets, {}, opts),
   ]);
 
+  const firstName = me.name.split(" ")[0];
   const totalActive = activeBets.length;
-  const firstName = user.name.split(" ")[0];
 
   return (
     <div className="container-app py-10 sm:py-14">
@@ -85,9 +69,9 @@ export default async function DashboardPage() {
                 <div className="flex items-center justify-between">
                   <span
                     className="badge text-white"
-                    style={{ backgroundColor: bet.group.color }}
+                    style={{ backgroundColor: bet.group?.color }}
                   >
-                    {bet.group.emoji} {bet.group.name}
+                    {bet.group?.emoji} {bet.group?.name}
                   </span>
                   <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-extrabold text-amber-700">
                     ⏱ {relativeTime(bet.closesAt)}
@@ -151,6 +135,9 @@ export default async function DashboardPage() {
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {groups.map((group) => {
               const openCount = group.bets.length;
+              const members = group.members.filter(
+                (m): m is NonNullable<typeof m> => m !== null,
+              );
               return (
                 <Link
                   key={group.id}
@@ -173,7 +160,7 @@ export default async function DashboardPage() {
                         {group.name}
                       </h3>
                       <p className="text-xs font-semibold text-ink-soft">
-                        {group.members.length} members · {relativeTime(group.createdAt)}
+                        {members.length} members · {relativeTime(group.createdAt)}
                       </p>
                     </div>
                   </div>
@@ -185,7 +172,7 @@ export default async function DashboardPage() {
                   <div className="relative mt-5 flex items-center justify-between border-t border-brand-50 pt-4">
                     <AvatarStack
                       size="sm"
-                      people={group.members.map((m) => ({
+                      people={members.map((m) => ({
                         name: m.user.name,
                         color: m.user.avatarColor,
                       }))}

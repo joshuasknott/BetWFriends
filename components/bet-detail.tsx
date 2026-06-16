@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useQuery, useMutation } from "convex/react";
 import { Avatar, Spinner } from "@/components/brand";
-import { api } from "@/lib/api-client";
 import { BetComments } from "@/components/bet-comments";
 import {
   formatMoney,
@@ -12,64 +12,21 @@ import {
   countdown,
   relativeTime,
 } from "@/lib/utils";
+import { api } from "@/convex/_generated/api";
 
-type WagerUser = { id: string; name: string; avatarColor: string };
-type Side = { id: string; label: string };
-type Wager = {
-  id: string;
-  sideId: string;
-  amount: number;
-  createdAt: string;
-  user: WagerUser;
-};
-
-type BetData = {
-  bet: {
-    id: string;
-    title: string;
-    description: string | null;
-    amount: number;
-    status: string;
-    outcome: string | null;
-    createdAt: string;
-    closesAt: string;
-    settledAt: string | null;
-  };
-  group: { id: string; name: string; emoji: string; color: string };
-  sides: Side[];
-  wagers: Wager[];
-  creator: WagerUser;
-  myWager: { id: string; sideId: string; amount: number } | null;
-  myBalance: number;
-  isCreator: boolean;
-};
-
-export function BetDetailClient({
-  betId,
-  initial,
-  currentUserId,
-}: {
-  betId: string;
-  initial: BetData;
-  currentUserId: string;
-}) {
+export function BetDetailClient({ betId }: { betId: string }) {
   const router = useRouter();
-  const [data, setData] = useState<BetData>(initial);
+  const data = useQuery(api.bets.getBet, { betId: betId as any });
+  const placeWager = useMutation(api.bets.placeWager);
+  const removeWager = useMutation(api.bets.removeWager);
+  const settleBet = useMutation(api.bets.resolveBet);
+  const cancelBetMut = useMutation(api.bets.cancelBet);
+
   const [now, setNow] = useState<number>(() => Date.now());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [showResolve, setShowResolve] = useState(false);
-
-  const refresh = useCallback(async () => {
-    const res = await api(`/api/bets/${betId}`);
-    if (res.ok) {
-      const json = await res.json();
-      setData(json);
-      return json as BetData;
-    }
-    return null;
-  }, [betId]);
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
@@ -82,12 +39,27 @@ export function BetDetailClient({
     return () => clearTimeout(t);
   }, [toast]);
 
+  if (data === undefined) {
+    return (
+      <div className="container-app flex justify-center py-20">
+        <Spinner />
+      </div>
+    );
+  }
+  if (data === null) {
+    return (
+      <div className="container-app py-20 text-center text-sm font-semibold text-ink-soft">
+        Bet not found.
+      </div>
+    );
+  }
+
   const { bet, sides, wagers, group, creator, myWager, isCreator } = data;
   const isOpen = bet.status === "open";
   const isSettled = bet.status === "settled";
   const isCancelled = bet.status === "cancelled";
-  const closed = new Date(bet.closesAt).getTime() <= now;
-  const cd = isOpen ? countdown(bet.closesAt) : null;
+  const closed = bet.closesAt <= now;
+  const cd = isOpen ? countdown(new Date(bet.closesAt)) : null;
 
   // side stats
   const totalPot = wagers.reduce((s, w) => s + w.amount, 0);
@@ -104,101 +76,71 @@ export function BetDetailClient({
 
   const canWager = isOpen && !closed;
 
-  async function placeWager(sideId: string) {
+  async function onPlaceWager(sideId: string) {
     setError(null);
-    if (myWager?.sideId === sideId) return; // already on this side
+    if (myWager?.sideId === sideId) return;
     if (!canWager) {
       setError("Betting has closed on this one");
       return;
     }
     setBusy(true);
     try {
-      const res = await api(`/api/bets/${betId}/wager`, {
-        method: "POST",
-        body: { sideId },
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        setError(json.error ?? "Couldn't place bet");
-      } else {
-        setToast(myWager ? "Switched sides!" : "You're in! 🎉");
-        const updated = await refresh();
-        // update balance locally if returned
-        if (updated) updated.myBalance = json.balance ?? updated.myBalance;
-      }
-    } catch {
-      setError("Network error");
+      await placeWager({ betId: betId as any, sideId: sideId as any });
+      setToast(myWager ? "Switched sides!" : "You're in! 🎉");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't place bet");
     } finally {
       setBusy(false);
     }
   }
 
-  async function pullOut() {
+  async function onPullOut() {
     setError(null);
     setBusy(true);
     try {
-      const res = await api(`/api/bets/${betId}/wager`, { method: "DELETE" });
-      const json = await res.json();
-      if (!res.ok) {
-        setError(json.error ?? "Couldn't pull out");
-      } else {
-        setToast("Pulled out — stake refunded");
-        await refresh();
-      }
-    } catch {
-      setError("Network error");
+      await removeWager({ betId: betId as any });
+      setToast("Pulled out — stake refunded");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't pull out");
     } finally {
       setBusy(false);
     }
   }
 
-  async function settle(winningSideId: string | null) {
+  async function onSettle(winningSideId: string | null) {
     setError(null);
     setBusy(true);
     try {
-      const res = await api(`/api/bets/${betId}/resolve`, {
-        method: "POST",
-        body: { winningSideId },
+      await settleBet({
+        betId: betId as any,
+        winningSideId: winningSideId as any,
       });
-      const json = await res.json();
-      if (!res.ok) {
-        setError(json.error ?? "Couldn't settle");
-      } else {
-        setToast("Bet settled! 🏆");
-        setShowResolve(false);
-        await refresh();
-        router.refresh();
-      }
-    } catch {
-      setError("Network error");
+      setToast("Bet settled! 🏆");
+      setShowResolve(false);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't settle");
     } finally {
       setBusy(false);
     }
   }
 
-  async function cancelBet() {
+  async function onCancelBet() {
     if (!confirm("Cancel this bet and refund everyone?")) return;
     setError(null);
     setBusy(true);
     try {
-      const res = await api(`/api/bets/${betId}/cancel`, { method: "POST" });
-      const json = await res.json();
-      if (!res.ok) {
-        setError(json.error ?? "Couldn't cancel");
-      } else {
-        setToast("Bet cancelled — stakes refunded");
-        await refresh();
-        router.refresh();
-      }
-    } catch {
-      setError("Network error");
+      await cancelBetMut({ betId: betId as any });
+      setToast("Bet cancelled — stakes refunded");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't cancel");
     } finally {
       setBusy(false);
     }
   }
 
-  const mySideLabel =
-    myWager && sides.find((s) => s.id === myWager.sideId)?.label;
+  const mySideLabel = myWager && sides.find((s) => s.id === myWager.sideId)?.label;
 
   return (
     <div className="container-app py-10 sm:py-14">
@@ -362,7 +304,7 @@ export function BetDetailClient({
                       {/* Wager action */}
                       {canWager && !isMine && (
                         <button
-                          onClick={() => placeWager(s.id)}
+                          onClick={() => onPlaceWager(s.id)}
                           disabled={busy}
                           className={`btn-${
                             color === "teal" ? "primary" : "secondary"
@@ -400,7 +342,7 @@ export function BetDetailClient({
                   </div>
                   {myWager && (
                     <button
-                      onClick={pullOut}
+                      onClick={onPullOut}
                       disabled={busy}
                       className="text-sm font-bold text-ink-soft transition hover:text-rose-600"
                     >
@@ -434,7 +376,7 @@ export function BetDetailClient({
                   </button>
                   {isOpen && (
                     <button
-                      onClick={cancelBet}
+                      onClick={onCancelBet}
                       className="btn-ghost"
                       disabled={busy}
                     >
@@ -449,7 +391,7 @@ export function BetDetailClient({
                     {sideStats.map((s, idx) => (
                       <button
                         key={s.id}
-                        onClick={() => settle(s.id)}
+                        onClick={() => onSettle(s.id)}
                         disabled={busy}
                         className={`btn-${idx === 0 ? "primary" : "secondary"}`}
                       >
@@ -458,7 +400,7 @@ export function BetDetailClient({
                     ))}
                   </div>
                   <button
-                    onClick={() => settle(null)}
+                    onClick={() => onSettle(null)}
                     disabled={busy}
                     className="btn-ghost w-full text-sm"
                   >
@@ -475,9 +417,7 @@ export function BetDetailClient({
             </div>
           )}
           {/* Banter / comments */}
-          {!isCancelled && (
-            <BetComments betId={betId} currentUserId={currentUserId} />
-          )}
+          {!isCancelled && <BetComments betId={betId} />}
         </div>
 
         {/* Sidebar: who's in */}

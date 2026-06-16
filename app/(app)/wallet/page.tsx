@@ -1,11 +1,16 @@
-import { requireUser } from "@/lib/session";
-import { prisma } from "@/lib/prisma";
+import { fetchQuery } from "convex/nextjs";
+import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
 import { TopUpPanel } from "@/components/top-up-panel";
-import { isMockPayments } from "@/lib/payments";
 import { formatMoney, formatDateTime } from "@/lib/utils";
 import { Underline } from "@/components/brand";
+import { api } from "@/convex/_generated/api";
 
 export const dynamic = "force-dynamic";
+
+/** Mock mode = real Stripe is not configured (PAYMENT_MODE != "live"). */
+function isMockPayments(): boolean {
+  return process.env.PAYMENT_MODE !== "live" || !process.env.STRIPE_SECRET_KEY;
+}
 
 const TYPE_META: Record<string, { emoji: string; label: string; color: string }> = {
   topup: { emoji: "💳", label: "Top-up", color: "text-teal-600" },
@@ -15,14 +20,15 @@ const TYPE_META: Record<string, { emoji: string; label: string; color: string }>
 };
 
 export default async function WalletPage() {
-  const user = await requireUser();
-  const mock = isMockPayments();
+  const token = await convexAuthNextjsToken();
+  const opts = token ? { token } : {};
 
-  const transactions = await prisma.transaction.findMany({
-    where: { userId: user.id },
-    orderBy: { createdAt: "desc" },
-    take: 50,
-  });
+  const { balance, transactions } = await fetchQuery(
+    api.wallet.listTransactions,
+    {},
+    opts,
+  );
+  const mock = isMockPayments();
 
   return (
     <div className="container-app py-10 sm:py-14">
@@ -43,7 +49,7 @@ export default async function WalletPage() {
             Your balance
           </div>
           <div className="mt-2 text-5xl font-black tracking-[-0.04em] sm:text-6xl">
-            {formatMoney(user.balance)}
+            {formatMoney(balance)}
           </div>
           <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-white/15 px-3.5 py-1.5 text-xs font-bold backdrop-blur">
             {mock

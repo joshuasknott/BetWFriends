@@ -1,44 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useMutation } from "convex/react";
 import { Avatar, Spinner } from "@/components/brand";
-import { api } from "@/lib/api-client";
 import { relativeTime } from "@/lib/utils";
+import { api } from "@/convex/_generated/api";
 
-type Comment = {
-  id: string;
-  text: string;
-  createdAt: string;
-  user: { id: string; name: string; avatarColor: string };
-};
+export function BetComments({ betId }: { betId: string }) {
+  const comments = useQuery(api.comments.list, { betId: betId as any });
+  const me = useQuery(api.profile.getMe, {});
+  const addComment = useMutation(api.comments.add);
+  const removeComment = useMutation(api.comments.remove);
 
-export function BetComments({ betId, currentUserId }: { betId: string; currentUserId: string }) {
-  const [comments, setComments] = useState<Comment[]>([]);
   const [text, setText] = useState("");
-  const [loading, setLoading] = useState(true);
   const [posting, setPosting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadComments() {
-      try {
-        const res = await api(`/api/bets/${betId}/comments`);
-        const data = await res.json();
-        if (!cancelled && res.ok) setComments(data.comments ?? []);
-      } catch {
-        // Comments are non-critical; leave the composer usable if loading fails.
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    loadComments();
-    return () => {
-      cancelled = true;
-    };
-  }, [betId]);
 
   async function post(e: React.FormEvent) {
     e.preventDefault();
@@ -46,19 +22,10 @@ export function BetComments({ betId, currentUserId }: { betId: string; currentUs
     setError(null);
     setPosting(true);
     try {
-      const res = await api(`/api/bets/${betId}/comments`, {
-        method: "POST",
-        body: { text },
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "Couldn't post comment");
-      } else {
-        setComments((prev) => [...prev, data.comment]);
-        setText("");
-      }
-    } catch {
-      setError("Network error");
+      await addComment({ betId: betId as any, text });
+      setText("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't post comment");
     } finally {
       setPosting(false);
     }
@@ -66,21 +33,19 @@ export function BetComments({ betId, currentUserId }: { betId: string; currentUs
 
   async function remove(commentId: string) {
     try {
-      const res = await api(`/api/bets/${betId}/comments?commentId=${commentId}`, {
-        method: "DELETE",
-      });
-      if (res.ok) {
-        setComments((prev) => prev.filter((c) => c.id !== commentId));
-      }
+      await removeComment({ commentId: commentId as any });
     } catch {
       // ignore
     }
   }
 
+  const currentUserId = me ? me.id : undefined;
+  const list = comments ?? [];
+
   return (
     <div className="card p-6 sm:p-7">
       <h2 className="text-base font-black tracking-tight">
-        Banter · {comments.length}
+        Banter · {list.length}
       </h2>
 
       {error && (
@@ -91,17 +56,17 @@ export function BetComments({ betId, currentUserId }: { betId: string; currentUs
 
       {/* Comments list */}
       <div className="mt-4 space-y-3">
-        {loading ? (
+        {comments === undefined ? (
           <div className="flex justify-center py-4">
             <Spinner />
           </div>
-        ) : comments.length === 0 ? (
+        ) : list.length === 0 ? (
           <div className="rounded-2xl bg-brand-50 px-4 py-8 text-center text-sm font-semibold text-ink-soft">
             <div className="text-3xl">💬</div>
             <p className="mt-2">No banter yet. Start the chat!</p>
           </div>
         ) : (
-          comments.map((c) => (
+          list.map((c) => (
             <div key={c.id} className="flex gap-3">
               <Avatar name={c.user.name} color={c.user.avatarColor} size="sm" />
               <div className="min-w-0 flex-1">
@@ -114,7 +79,7 @@ export function BetComments({ betId, currentUserId }: { betId: string; currentUs
                   </div>
                   <p className="mt-0.5 text-sm leading-relaxed text-ink">{c.text}</p>
                 </div>
-                {c.user.id === currentUserId && (
+                {currentUserId !== undefined && c.userId === currentUserId && (
                   <button
                     onClick={() => remove(c.id)}
                     className="mt-1 text-[11px] font-bold text-ink-soft/60 transition hover:text-rose-500"

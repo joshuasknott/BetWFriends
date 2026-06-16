@@ -2,12 +2,12 @@ import Link from "next/link";
 import { Avatar } from "@/components/brand";
 import { getBetStats } from "@/lib/bet-stats";
 import { relativeTime, formatMoneyShort } from "@/lib/utils";
-import type { Bet, BetSide, Wager, User } from "@prisma/client";
+import type { BetLike, BetSideLike, WagerLike, UserRef } from "@/lib/types";
 
-type BetWithRelations = Bet & {
-  sides: BetSide[];
-  wagers: (Wager & { user: User })[];
-  creator: User;
+type BetWithRelations = BetLike & {
+  sides: BetSideLike[];
+  wagers: (WagerLike & { user: UserRef })[];
+  creator: UserRef;
 };
 
 const STATUS_STYLE: Record<string, string> = {

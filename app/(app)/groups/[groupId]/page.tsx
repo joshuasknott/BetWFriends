@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireUser } from "@/lib/session";
-import { prisma } from "@/lib/prisma";
+import { fetchQuery } from "convex/nextjs";
+import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
 import { AvatarStack, Avatar } from "@/components/brand";
 import { CopyButton } from "@/components/copy-button";
 import { BetCard } from "@/components/bet-card";
@@ -10,6 +10,7 @@ import { LeaveGroupButton } from "@/components/leave-group-button";
 import { GroupSettings } from "@/components/group-settings";
 import { relativeTime, formatMoney } from "@/lib/utils";
 import { computeLeaderboard } from "@/lib/leaderboard";
+import { api } from "@/convex/_generated/api";
 
 export const dynamic = "force-dynamic";
 
@@ -18,36 +19,26 @@ export default async function GroupPage({
 }: {
   params: Promise<{ groupId: string }>;
 }) {
-  const user = await requireUser();
   const { groupId } = await params;
+  const token = await convexAuthNextjsToken();
+  const opts = token ? { token } : {};
 
-  const group = await prisma.group.findUnique({
-    where: { id: groupId },
-    include: {
-      members: {
-        include: { user: true },
-        orderBy: { joinedAt: "asc" },
-      },
-      bets: {
-        include: {
-          sides: true,
-          wagers: { include: { user: true } },
-          creator: true,
-        },
-        orderBy: { createdAt: "desc" },
-      },
-      createdBy: true,
-    },
-  });
+  const [me, group] = await Promise.all([
+    fetchQuery(api.profile.getMe, {}, opts),
+    fetchQuery(api.groups.getGroup, { groupId: groupId as any }, opts),
+  ]);
 
   if (!group) notFound();
 
-  const membership = group.members.find((m) => m.userId === user.id);
-  if (!membership) notFound();
-
   const openBets = group.bets.filter((b) => b.status === "open");
   const resolvedBets = group.bets.filter((b) => b.status !== "open");
-  const leaderboard = computeLeaderboard(group.bets, group.members);
+  const members = group.members.filter(
+    (m): m is NonNullable<typeof m> => m !== null,
+  );
+  const leaderboard = computeLeaderboard(
+    group.bets,
+    members.map((m) => ({ userId: m.userId, user: m.user })),
+  );
   const hasSettledBets = resolvedBets.some((b) => b.status === "settled");
 
   return (
@@ -84,12 +75,12 @@ export default async function GroupPage({
                 <span className="flex items-center gap-2">
                   <AvatarStack
                     size="sm"
-                    people={group.members.map((m) => ({
+                    people={members.map((m) => ({
                       name: m.user.name,
                       color: m.user.avatarColor,
                     }))}
                   />
-                  {group.members.length} members
+                  {members.length} members
                 </span>
                 <span className="text-ink-soft/60">·</span>
                 <span>created {relativeTime(group.createdAt)}</span>
@@ -120,7 +111,7 @@ export default async function GroupPage({
       </div>
 
       {/* Group settings (creator only) */}
-      {group.createdById === user.id && (
+      {group.createdById === me.id && (
         <div className="mt-6">
           <GroupSettings
             groupId={group.id}
@@ -173,7 +164,7 @@ export default async function GroupPage({
       <section className="mt-10">
         <h2 className="h-section">Settled & past</h2>
         <div className="mt-4">
-          <BetHistoryFilter bets={resolvedBets} userId={user.id} />
+          <BetHistoryFilter bets={resolvedBets} userId={me.id} />
         </div>
       </section>
 
@@ -187,7 +178,7 @@ export default async function GroupPage({
               return (
                 <div
                   key={entry.userId}
-                  className={`flex items-center gap-3.5 px-5 py-4 ${entry.userId === user.id ? "bg-brand-50/50" : ""}`}
+                  className={`flex items-center gap-3.5 px-5 py-4 ${entry.userId === me.id ? "bg-brand-50/50" : ""}`}
                 >
                   <div className="grid h-8 w-8 shrink-0 place-items-center text-lg font-black text-ink-soft">
                     {medal ?? idx + 1}
@@ -196,7 +187,7 @@ export default async function GroupPage({
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-black">
                       {entry.name}
-                      {entry.userId === user.id && (
+                      {entry.userId === me.id && (
                         <span className="ml-2 text-xs font-bold text-brand-600">(you)</span>
                       )}
                     </div>
@@ -226,10 +217,10 @@ export default async function GroupPage({
       {/* Members */}
       <section className="mt-10">
         <div className="flex items-baseline justify-between">
-          <h2 className="h-section">Members · {group.members.length}</h2>
+          <h2 className="h-section">Members · {members.length}</h2>
         </div>
         <div className="card mt-4 divide-y divide-brand-50">
-          {group.members.map((m) => (
+          {members.map((m) => (
             <div
               key={m.id}
               className="flex items-center gap-3.5 px-5 py-3.5"
@@ -238,7 +229,7 @@ export default async function GroupPage({
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-black">
                   {m.user.name}
-                  {m.userId === user.id && (
+                  {m.userId === me.id && (
                     <span className="ml-2 text-xs font-bold text-brand-600">
                       (you)
                     </span>
@@ -259,8 +250,8 @@ export default async function GroupPage({
           <LeaveGroupButton
             groupId={group.id}
             groupName={group.name}
-            isCreator={group.createdById === user.id}
-            memberCount={group.members.length}
+            isCreator={group.createdById === me.id}
+            memberCount={members.length}
           />
         </div>
       </section>
