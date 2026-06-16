@@ -9,7 +9,7 @@ test.describe("Unauthenticated experience", () => {
   test("landing page loads and shows CTA", async ({ page }) => {
     await page.goto("/");
     await expect(page.locator("h1")).toContainText(/money where your/i);
-    await expect(page.getByRole("link", { name: /create a bet/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Create a bet" }).first()).toBeVisible();
   });
 
   test("login page renders form", async ({ page }) => {
@@ -36,8 +36,10 @@ test.describe("Authenticated journey", () => {
     await page.goto("/login");
     await page.fill('[name="email"]', "josh@example.com");
     await page.fill('[name="password"]', "password");
-    await page.click('button[type="submit"]');
-    await page.waitForURL("**/dashboard");
+    await Promise.all([
+      page.waitForURL("**/dashboard"),
+      page.getByRole("button", { name: /log in/i }).click(),
+    ]);
   });
 
   test("dashboard shows groups", async ({ page }) => {

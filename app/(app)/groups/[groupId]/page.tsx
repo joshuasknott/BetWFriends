@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { AvatarStack, Avatar } from "@/components/brand";
 import { CopyButton } from "@/components/copy-button";
 import { BetCard } from "@/components/bet-card";
+import { BetHistoryFilter } from "@/components/bet-history-filter";
 import { LeaveGroupButton } from "@/components/leave-group-button";
 import { GroupSettings } from "@/components/group-settings";
 import { relativeTime, formatMoney } from "@/lib/utils";
@@ -169,16 +170,12 @@ export default async function GroupPage({
       </section>
 
       {/* Past bets */}
-      {resolvedBets.length > 0 && (
-        <section className="mt-10">
-          <h2 className="h-section">Settled & past</h2>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            {resolvedBets.map((bet) => (
-              <BetCard key={bet.id} bet={bet} href={`/bets/${bet.id}`} />
-            ))}
-          </div>
-        </section>
-      )}
+      <section className="mt-10">
+        <h2 className="h-section">Settled & past</h2>
+        <div className="mt-4">
+          <BetHistoryFilter bets={resolvedBets} userId={user.id} />
+        </div>
+      </section>
 
       {/* Leaderboard */}
       {hasSettledBets && (

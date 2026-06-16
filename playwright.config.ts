@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const port = Number(process.env.PLAYWRIGHT_PORT ?? 3100);
-const baseURL = `http://127.0.0.1:${port}`;
+const baseURL = `http://localhost:${port}`;
 
 /**
  * Playwright E2E test configuration.
@@ -9,10 +9,10 @@ const baseURL = `http://127.0.0.1:${port}`;
  */
 export default defineConfig({
   testDir: "./tests/e2e",
-  fullyParallel: true,
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: 1,
   reporter: process.env.CI ? "github" : "html",
   use: {
     baseURL,
