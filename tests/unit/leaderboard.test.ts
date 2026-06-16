@@ -1,10 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { computeLeaderboard } from "@/lib/leaderboard";
-import type { Bet, BetSide, Wager } from "@prisma/client";
 
-type TestBet = Bet & {
-  sides: BetSide[];
-  wagers: (Wager & { user: { id: string; name: string; avatarColor: string } })[];
+type TestBet = {
+  id: string;
+  status: string;
+  outcome: string | null;
+  sides: { id: string; label: string }[];
+  wagers: { sideId: string; userId: string; amount: number; user: { id: string; name: string; avatarColor: string } }[];
 };
 
 const members = [
@@ -17,29 +19,18 @@ function makeSettledBet(
   outcomeLabel: string,
   wagers: { userId: string; side: "yes" | "no"; amount: number }[],
 ): TestBet {
-  const yesSide: BetSide = { id: "yes", betId: "b1", label: "Yes" } as BetSide;
-  const noSide: BetSide = { id: "no", betId: "b1", label: "No" } as BetSide;
+  const yesSide = { id: "yes", label: "Yes" };
+  const noSide = { id: "no", label: "No" };
 
   return {
     id: "b1",
-    groupId: "g1",
-    creatorId: "u1",
-    title: "Test bet",
-    description: null,
-    amount: 1000,
     status: "settled",
     outcome: outcomeLabel,
-    createdAt: new Date(),
-    closesAt: new Date(),
-    settledAt: new Date(),
     sides: [yesSide, noSide],
-    wagers: wagers.map((w, i) => ({
-      id: `w${i}`,
-      betId: "b1",
+    wagers: wagers.map((w) => ({
       sideId: w.side === "yes" ? "yes" : "no",
       userId: w.userId,
       amount: w.amount,
-      createdAt: new Date(),
       user: {
         id: w.userId,
         name: members.find((m) => m.userId === w.userId)?.user.name ?? "?",

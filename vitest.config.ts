@@ -19,8 +19,8 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
-      include: ["lib/**", "app/api/**"],
-      exclude: ["**/*.d.ts", "**/node_modules/**"],
+      include: ["lib/**", "convex/**"],
+      exclude: ["**/*.d.ts", "**/node_modules/**", "convex/_generated/**"],
     },
   },
 });

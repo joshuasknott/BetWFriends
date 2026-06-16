@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+# The Convex deployment URL + deploy key are needed to run the backend.
+# Configure these as repository secrets:
+#   CONVEX_DEPLOYMENT  — e.g. "https://happy-animal-123.convex.cloud"
+#   CONVEX_DEPLOY_KEY  — a deploy key for the (preview) deployment
 jobs:
   lint-typecheck-test:
     name: Lint, Type Check & Unit Tests
@@ -28,21 +32,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Generate Prisma client
-        run: pnpm exec prisma generate
-        env:
-          DATABASE_URL: "file:./dev.db"
-
-      - name: Run database migrations
-        run: pnpm exec prisma migrate deploy
-        env:
-          DATABASE_URL: "file:./dev.db"
-
-      - name: Seed database
-        run: pnpm run seed
-        env:
-          DATABASE_URL: "file:./dev.db"
-
       - name: Lint
         run: pnpm run lint
 
@@ -55,8 +44,7 @@ jobs:
       - name: Build
         run: pnpm run build
         env:
-          DATABASE_URL: "file:./dev.db"
-          SESSION_SECRET: "ci-test-secret-at-least-32-characters-long-xxxxx"
+          NEXT_PUBLIC_CONVEX_URL: ${{ secrets.NEXT_PUBLIC_CONVEX_URL }}
           PAYMENT_MODE: "mock"
 
   e2e:
@@ -81,20 +69,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Generate Prisma client
-        run: pnpm exec prisma generate
+      - name: Push Convex functions & seed
+        run: |
+          pnpm exec convex deploy
+          pnpm run seed
         env:
-          DATABASE_URL: "file:./dev.db"
-
-      - name: Run database migrations
-        run: pnpm exec prisma migrate deploy
-        env:
-          DATABASE_URL: "file:./dev.db"
-
-      - name: Seed database
-        run: pnpm run seed
-        env:
-          DATABASE_URL: "file:./dev.db"
+          CONVEX_DEPLOYMENT: ${{ secrets.CONVEX_DEPLOYMENT }}
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
 
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
@@ -102,8 +83,7 @@ jobs:
       - name: Run E2E tests
         run: pnpm run test:e2e --project=chromium-desktop
         env:
-          DATABASE_URL: "file:./dev.db"
-          SESSION_SECRET: "ci-e2e-test-secret-at-least-32-characters-long-x"
+          NEXT_PUBLIC_CONVEX_URL: ${{ secrets.NEXT_PUBLIC_CONVEX_URL }}
           PAYMENT_MODE: "mock"
 
       - name: Upload test results

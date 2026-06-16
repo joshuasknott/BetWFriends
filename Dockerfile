@@ -1,15 +1,16 @@
-# BetWFriends production Docker image
-# Multi-stage build for minimal final image size.
+# BetWFriends production Docker image (frontend only).
+#
+# The backend now runs on Convex — set NEXT_PUBLIC_CONVEX_URL so the frontend
+# can talk to your Convex deployment. There is no embedded database.
+#
+# Multi-stage build for a minimal final image size.
 
 # --- Stage 1: Install dependencies ---
 FROM node:22-alpine AS deps
-RUN apk add --no-cache python3 make g++ libc6-compat
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
-COPY prisma ./prisma
-COPY prisma.config.ts ./
 RUN pnpm install --frozen-lockfile
 
 # --- Stage 2: Build the app ---
@@ -41,19 +42,8 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Copy Prisma files for migrations at runtime
-COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
-COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.ts ./prisma.config.ts
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.pnpm/@prisma+client*/node_modules/@prisma/client ./node_modules/@prisma/client
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.pnpm/@prisma+adapter-better-sqlite3*/node_modules/@prisma/adapter-better-sqlite3 ./node_modules/@prisma/adapter-better-sqlite3
-
-# Create data directory for SQLite
-RUN mkdir -p /app/data && chown nextjs:nodejs /app/data
-
 USER nextjs
 
 EXPOSE 3000
-
-ENV DATABASE_URL="file:/app/data/prod.db"
 
 CMD ["node", "server.js"]

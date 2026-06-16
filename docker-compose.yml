@@ -3,15 +3,11 @@ services:
     build: .
     ports:
       - "3000:3000"
-    volumes:
-      - ./data:/app/data
     environment:
-      DATABASE_URL: "file:/app/data/prod.db"
-      SESSION_SECRET: "${SESSION_SECRET:-change-me-to-a-long-random-string-at-least-32-chars}"
+      # The backend runs on Convex — point the frontend at your deployment.
+      NEXT_PUBLIC_CONVEX_URL: "${NEXT_PUBLIC_CONVEX_URL:-https://your-deployment.convex.cloud}"
       PAYMENT_MODE: "${PAYMENT_MODE:-mock}"
       NEXT_PUBLIC_APP_URL: "${NEXT_PUBLIC_APP_URL:-http://localhost:3000}"
-      # Uncomment and set these for live Stripe payments:
-      # STRIPE_SECRET_KEY: "sk_..."
-      # STRIPE_PUBLISHABLE_KEY: "pk_..."
-      # STRIPE_WEBHOOK_SECRET: "whsec_..."
+      # For live Stripe payments, set these as Convex env vars instead:
+      # STRIPE_SECRET_KEY / STRIPE_PUBLISHABLE_KEY / STRIPE_WEBHOOK_SECRET
     restart: unless-stopped

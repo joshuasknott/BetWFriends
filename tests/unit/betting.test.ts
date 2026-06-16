@@ -1,20 +1,20 @@
 import { describe, it, expect } from "vitest";
 import { computePayouts } from "@/lib/betting";
-import type { Wager } from "@prisma/client";
+import type { WagerLike } from "@/lib/types";
 
 function makeWager(
   userId: string,
   sideId: string,
   amount: number,
-): Wager {
+): WagerLike {
   return {
     id: `w-${userId}-${sideId}`,
     betId: "bet1",
     sideId,
     userId,
     amount,
-    createdAt: new Date(),
-  } as Wager;
+    createdAt: Date.now(),
+  };
 }
 
 describe("computePayouts", () => {
