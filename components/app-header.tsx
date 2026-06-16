@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Logo, Avatar } from "@/components/brand";
+import { NotificationBadge } from "@/components/notification-badge";
 import { api } from "@/lib/api-client";
 import { formatMoneyShort } from "@/lib/utils";
 
@@ -62,6 +63,7 @@ export function AppHeader({
         </nav>
 
         <div className="flex items-center gap-2.5">
+          <NotificationBadge />
           <Link
             href="/wallet"
             className="flex items-center gap-2.5 rounded-xl border border-brand-200 bg-white px-3.5 py-2 transition hover:bg-brand-50"
