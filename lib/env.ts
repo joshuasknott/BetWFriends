@@ -1,14 +1,10 @@
 /**
  * Centralised, validated environment configuration.
  *
- * Reading process.env directly across the codebase makes it easy to ship with a
- * default secret or an unset value. This module validates the environment once,
- * fails loudly in production when something is wrong, and exposes typed helpers
- * everywhere else.
+ * The database + session secrets that used to live here are gone — Convex Auth
+ * and the Convex deployment manage those now. What remains is Stripe payment
+ * config and the public app URL.
  */
-
-const DEFAULT_DEV_SECRET =
-  "betwfriends-dev-secret-change-me-in-production-please-use-32+chars";
 
 function readRaw(name: string): string | undefined {
   const value = process.env[name];
@@ -23,12 +19,6 @@ export const env = {
   nodeEnv: process.env.NODE_ENV ?? "development",
   isProduction,
   isDevelopment: !isProduction,
-
-  /** Database URL. Falls back to a local SQLite file for development. */
-  databaseUrl: readRaw("DATABASE_URL") ?? "file:./dev.db",
-
-  /** JWT/session secret. Must be set and non-default in production. */
-  sessionSecret: readRaw("SESSION_SECRET") ?? DEFAULT_DEV_SECRET,
 
   /**
    * "live" enables real Stripe payments. Anything else (including unset) is
@@ -53,39 +43,22 @@ export function isLivePayments(): boolean {
 }
 
 /**
- * Validate the environment. Called from middleware and instrumentation so the
- * app fails fast on boot instead of serving insecure requests.
- *
- * In development we only warn. In production we throw — better to refuse to
- * start than to sign JWTs with a default secret.
+ * Validate the environment. Called from instrumentation so the app fails fast
+ * on boot. In development we only warn. In production we throw when live
+ * payments are enabled but Stripe keys are missing.
  */
 export function assertEnv(): void {
   if (!env.isProduction) return;
 
-  if (
-    env.sessionSecret === DEFAULT_DEV_SECRET ||
-    env.sessionSecret.length < 32
-  ) {
-    throw new Error(
-      "SESSION_SECRET must be set to a random string of at least 32 characters in production.",
-    );
-  }
-
   if (env.paymentMode === "live") {
     if (!env.stripeSecretKey) {
-      throw new Error(
-        'PAYMENT_MODE is "live" but STRIPE_SECRET_KEY is not set.',
-      );
+      throw new Error('PAYMENT_MODE is "live" but STRIPE_SECRET_KEY is not set.');
     }
     if (!env.stripePublishableKey) {
-      throw new Error(
-        'PAYMENT_MODE is "live" but STRIPE_PUBLISHABLE_KEY is not set.',
-      );
+      throw new Error('PAYMENT_MODE is "live" but STRIPE_PUBLISHABLE_KEY is not set.');
     }
     if (!env.stripeWebhookSecret) {
-      throw new Error(
-        'PAYMENT_MODE is "live" but STRIPE_WEBHOOK_SECRET is not set.',
-      );
+      throw new Error('PAYMENT_MODE is "live" but STRIPE_WEBHOOK_SECRET is not set.');
     }
   }
 }
