@@ -1,4 +1,4 @@
-import type { QueryCtx } from "./_generated/server";
+import type { QueryCtx, ActionCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
@@ -8,10 +8,14 @@ import { getAuthUserId } from "@convex-dev/auth/server";
  *
  * Convex Auth uses `getAuthUserId(ctx)` to read the signed-in user from the
  * request's session; there are no cookies/JWTs to manage here.
+ *
+ * These accept either a QueryCtx or ActionCtx (both expose `.db` and `.auth`).
  */
 
+type AnyCtx = QueryCtx | ActionCtx;
+
 export async function getCurrentUser(
-  ctx: QueryCtx,
+  ctx: AnyCtx,
 ): Promise<Doc<"users"> | null> {
   const userId = await getAuthUserId(ctx);
   if (userId === null) return null;
@@ -19,14 +23,14 @@ export async function getCurrentUser(
 }
 
 /** Throws if the client is not authenticated, returning the user otherwise. */
-export async function requireUser(ctx: QueryCtx): Promise<Doc<"users">> {
+export async function requireUser(ctx: AnyCtx): Promise<Doc<"users">> {
   const user = await getCurrentUser(ctx);
   if (!user) throw new Error("Not authenticated");
   return user;
 }
 
 /** Returns the auth user id or throws. Use when you only need the id. */
-export async function requireAuth(ctx: QueryCtx): Promise<Id<"users">> {
+export async function requireAuth(ctx: AnyCtx): Promise<Id<"users">> {
   const userId = await getAuthUserId(ctx);
   if (userId === null) throw new Error("Not authenticated");
   return userId;

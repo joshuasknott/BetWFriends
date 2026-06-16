@@ -1,6 +1,6 @@
 import Password from "@convex-dev/auth/providers/Password";
 import { convexAuth } from "@convex-dev/auth/server";
-import { colorFromString } from "../src/lib/utils";
+import { colorFromString } from "../lib/utils";
 
 /**
  * Convex Auth configuration.
