@@ -45,11 +45,12 @@ test.describe("Authenticated journey", () => {
   test("dashboard shows groups", async ({ page }) => {
     await expect(page.locator("h1")).toContainText(/Hey/i);
     // Should have at least one group from seed data
-    await expect(page.getByText(/Saturday Squad|Flat 4B/i)).toBeVisible();
+    await expect(page.getByRole("link", { name: /Saturday Squad 6 members/i })).toBeVisible();
   });
 
   test("can navigate to a group", async ({ page }) => {
-    await page.getByText(/Saturday Squad/i).first().click();
+    // Click the group card heading, not a bet card that mentions the group name
+    await page.getByRole("heading", { name: "Saturday Squad" }).click();
     await expect(page).toHaveURL(/\/groups\//);
     await expect(page.getByText(/Live bets|Settled|Members/i)).toBeVisible();
   });
@@ -57,13 +58,14 @@ test.describe("Authenticated journey", () => {
   test("wallet shows balance and transactions", async ({ page }) => {
     await page.goto("/wallet");
     await expect(page.getByText(/Your balance/i)).toBeVisible();
-    await expect(page.getByText(/£/i)).toBeVisible();
+    await expect(page.getByText(/£33\.00/i)).toBeVisible();
   });
 
   test("profile shows stats", async ({ page }) => {
     await page.goto("/profile");
     await expect(page.getByText(/Your record/i)).toBeVisible();
-    await expect(page.getByText(/Groups|Bets made|Bets entered|Wins/i)).toBeVisible();
+    await expect(page.getByRole("main").getByText("Bets entered")).toBeVisible();
+    await expect(page.getByRole("main").getByText("Wins")).toBeVisible();
   });
 
   test("can see profile editor and password change", async ({ page }) => {
