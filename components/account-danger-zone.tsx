@@ -2,17 +2,21 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useMutation } from "convex/react";
+import { useAuthActions } from "@convex-dev/auth/react";
 import { Spinner } from "@/components/brand";
-import { api } from "@/lib/api-client";
+import { api } from "@/convex/_generated/api";
 
 export function AccountDangerZone() {
   const router = useRouter();
+  const deleteAccount = useMutation(api.profile.deleteAccount);
+  const { signOut } = useAuthActions();
   const [open, setOpen] = useState(false);
   const [confirmText, setConfirmText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function deleteAccount() {
+  async function handleDelete() {
     setError(null);
     if (confirmText !== "DELETE") {
       setError('Type "DELETE" to confirm');
@@ -20,20 +24,12 @@ export function AccountDangerZone() {
     }
     setLoading(true);
     try {
-      const res = await api("/api/profile/delete", {
-        method: "POST",
-        body: { confirm: confirmText },
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "Couldn't delete account");
-        setLoading(false);
-        return;
-      }
+      await deleteAccount({ confirm: confirmText });
+      await signOut();
       router.push("/");
       router.refresh();
-    } catch {
-      setError("Network error");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't delete account");
       setLoading(false);
     }
   }
@@ -77,7 +73,7 @@ export function AccountDangerZone() {
           />
           <div className="flex flex-wrap gap-3">
             <button
-              onClick={deleteAccount}
+              onClick={handleDelete}
               disabled={loading}
               className="btn-danger"
             >

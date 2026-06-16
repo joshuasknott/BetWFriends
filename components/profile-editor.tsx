@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useMutation } from "convex/react";
 import { Avatar, Spinner } from "@/components/brand";
-import { api } from "@/lib/api-client";
+import { api } from "@/convex/_generated/api";
 
 const COLORS = [
   "#7c3aed", "#db2777", "#0891b2", "#ea580c",
@@ -19,6 +20,7 @@ export function ProfileEditor({
   avatarColor: string;
 }) {
   const router = useRouter();
+  const updateProfile = useMutation(api.profile.updateProfile);
   const [name, setName] = useState(initialName);
   const [color, setColor] = useState(initialColor);
   const [loading, setLoading] = useState(false);
@@ -32,20 +34,12 @@ export function ProfileEditor({
     setError(null);
     setLoading(true);
     try {
-      const res = await api("/api/profile", {
-        method: "PATCH",
-        body: { name, avatarColor: color },
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "Couldn't save");
-      } else {
-        setSaved(true);
-        setTimeout(() => setSaved(false), 2500);
-        router.refresh();
-      }
-    } catch {
-      setError("Network error");
+      await updateProfile({ name, avatarColor: color });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Network error");
     } finally {
       setLoading(false);
     }

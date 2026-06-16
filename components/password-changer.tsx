@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useAction } from "convex/react";
 import { Spinner } from "@/components/brand";
-import { api } from "@/lib/api-client";
+import { api } from "@/convex/_generated/api";
 
 export function PasswordChanger() {
+  const changePassword = useAction(api.profile.changePassword);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -28,22 +30,14 @@ export function PasswordChanger() {
 
     setLoading(true);
     try {
-      const res = await api("/api/profile", {
-        method: "PUT",
-        body: { currentPassword, newPassword },
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "Couldn't change password");
-      } else {
-        setSuccess(true);
-        setCurrentPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
-        setTimeout(() => setSuccess(false), 3000);
-      }
-    } catch {
-      setError("Network error");
+      await changePassword({ currentPassword, newPassword });
+      setSuccess(true);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't change password");
     } finally {
       setLoading(false);
     }

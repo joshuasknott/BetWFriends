@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useMutation } from "convex/react";
 import { Spinner } from "@/components/brand";
-import { api } from "@/lib/api-client";
+import { api } from "@/convex/_generated/api";
 
 const EMOJIS = [
   "🎲", "🍺", "⚽", "🎮", "🎸", "🏆", "🍕", "🎬",
@@ -29,6 +30,7 @@ export function GroupSettings({
   initialColor: string;
 }) {
   const router = useRouter();
+  const updateGroup = useMutation(api.groups.updateGroup);
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(initialName);
   const [description, setDescription] = useState(initialDescription ?? "");
@@ -48,19 +50,17 @@ export function GroupSettings({
     setError(null);
     setLoading(true);
     try {
-      const res = await api(`/api/groups/${groupId}`, {
-        method: "PATCH",
-        body: { name, description, emoji, color },
+      await updateGroup({
+        groupId: groupId as any,
+        name,
+        description,
+        emoji,
+        color,
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "Couldn't save");
-      } else {
-        setOpen(false);
-        router.refresh();
-      }
-    } catch {
-      setError("Network error");
+      setOpen(false);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't save");
     } finally {
       setLoading(false);
     }

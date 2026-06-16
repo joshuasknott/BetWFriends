@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useMutation } from "convex/react";
 import { Spinner } from "@/components/brand";
-import { api } from "@/lib/api-client";
+import { api } from "@/convex/_generated/api";
 
 export function LeaveGroupButton({
   groupId,
@@ -17,6 +18,7 @@ export function LeaveGroupButton({
   memberCount: number;
 }) {
   const router = useRouter();
+  const leaveGroup = useMutation(api.groups.leaveGroup);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,17 +34,11 @@ export function LeaveGroupButton({
     setError(null);
     setLoading(true);
     try {
-      const res = await api(`/api/groups/${groupId}/leave`, { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "Couldn't leave group");
-        setLoading(false);
-        return;
-      }
+      await leaveGroup({ groupId: groupId as any });
       router.push("/dashboard");
       router.refresh();
-    } catch {
-      setError("Network error");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't leave group");
       setLoading(false);
     }
   }

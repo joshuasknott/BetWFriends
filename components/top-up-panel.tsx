@@ -2,14 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAction } from "convex/react";
 import { Spinner } from "@/components/brand";
-import { api } from "@/lib/api-client";
 import { formatMoney } from "@/lib/utils";
+import { api } from "@/convex/_generated/api";
 
 const QUICK_AMOUNTS = [500, 1000, 2000, 5000]; // pence
 
 export function TopUpPanel({ mockMode }: { mockMode: boolean }) {
   const router = useRouter();
+  const topUpAction = useAction(api.wallet.topUp);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [customPounds, setCustomPounds] = useState("");
@@ -18,16 +20,7 @@ export function TopUpPanel({ mockMode }: { mockMode: boolean }) {
     setError(null);
     setLoading(true);
     try {
-      const res = await api("/api/wallet/topup", {
-        method: "POST",
-        body: { amount: amountPence },
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "Couldn't top up");
-        setLoading(false);
-        return;
-      }
+      const data = await topUpAction({ amount: amountPence });
       if (data.mode === "mock") {
         router.refresh();
         setLoading(false);
@@ -39,8 +32,8 @@ export function TopUpPanel({ mockMode }: { mockMode: boolean }) {
         );
         setLoading(false);
       }
-    } catch {
-      setError("Network error");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Network error");
       setLoading(false);
     }
   }

@@ -1,40 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { api } from "@/lib/api-client";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 
 /**
  * Shows a badge with the count of bets the user needs to settle.
- * Polls every 60s while on authenticated pages. Shown in the desktop header.
+ * Live via Convex reactive query — no polling. Shown in the desktop header.
  */
 export function NotificationBadge() {
-  const [count, setCount] = useState(0);
-  const pathname = usePathname();
-
-  useEffect(() => {
-    let active = true;
-
-    async function check() {
-      try {
-        const res = await api("/api/me/pending");
-        if (res.ok) {
-          const data = await res.json();
-          if (active) setCount(data.awaitingSettlement ?? 0);
-        }
-      } catch {
-        // silent — don't disrupt UX for notification failures
-      }
-    }
-
-    check();
-    const interval = setInterval(check, 60_000);
-    return () => {
-      active = false;
-      clearInterval(interval);
-    };
-  }, [pathname]);
+  const pending = useQuery(api.profile.getPending, {});
+  const count = pending?.awaitingSettlement ?? 0;
 
   if (count === 0) return null;
 
