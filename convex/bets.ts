@@ -3,7 +3,7 @@ import { mutation, query } from "./_generated/server";
 import { requireUser, publicUserRef } from "./authHelpers";
 import { computePayouts } from "../lib/betting";
 import { creditBalance, cancelBetWithRefunds } from "./groups";
-import type { Doc } from "./_generated/dataModel";
+import type { Id } from "./_generated/dataModel";
 
 /**
  * Bet functions — ported from app/api/bets.
@@ -186,7 +186,7 @@ export const resolveBet = mutation({
 
     for (const winner of result.winners) {
       if (winner.amount <= 0) continue;
-      await creditBalance(ctx, winner.userId, winner.amount, "payout", `Winnings: ${bet.title}`);
+      await creditBalance(ctx, winner.userId as Id<"users">, winner.amount, "payout", `Winnings: ${bet.title}`);
     }
 
     await ctx.db.patch(args.betId, {
@@ -236,26 +236,29 @@ export const getBet = query({
     const isMember = members.some((m) => m.userId === user._id);
     if (!isMember) return null;
 
-    const [sides, wagers, creator] = await Promise.all([
+    const [sides, wagerDocs, creator] = await Promise.all([
       ctx.db.query("betSides").withIndex("by_bet", (q) => q.eq("betId", bet._id)).collect(),
-      ctx.db
-        .query("wagers")
-        .withIndex("by_bet", (q) => q.eq("betId", bet._id))
-        .collect()
-        .then((ws) =>
-          Promise.all(
-            ws.map(async (w) => ({
-              id: w._id,
-              sideId: w.sideId,
-              userId: w.userId,
-              amount: w.amount,
-              createdAt: w.createdAt,
-              user: (await ctx.db.get(w.userId)) ?? null,
-            })),
-          ),
-        ),
+      ctx.db.query("wagers").withIndex("by_bet", (q) => q.eq("betId", bet._id)).collect(),
       ctx.db.get(bet.creatorId),
     ]);
+    // A bet always has a valid creator; if the doc is gone the data is corrupt.
+    const creatorDoc = creator ? publicUserRef(creator) : { id: bet.creatorId, name: "Unknown", avatarColor: "#7c3aed" };
+    const wagers = (
+      await Promise.all(
+        wagerDocs.map(async (w) => {
+          const u = await ctx.db.get(w.userId);
+          if (!u) return null;
+          return {
+            id: w._id,
+            sideId: w.sideId,
+            userId: w.userId,
+            amount: w.amount,
+            createdAt: w.createdAt,
+            user: publicUserRef(u),
+          };
+        }),
+      )
+    ).filter((w): w is NonNullable<typeof w> => w !== null);
 
     const myWager = wagers.find((w) => w.userId === user._id) ?? null;
 
@@ -263,13 +266,13 @@ export const getBet = query({
       bet: {
         id: bet._id,
         title: bet.title,
-        description: bet.description,
+        description: bet.description ?? null,
         amount: bet.amount,
         status: bet.status,
-        outcome: bet.outcome,
+        outcome: bet.outcome ?? null,
         createdAt: bet.createdAt,
         closesAt: bet.closesAt,
-        settledAt: bet.settledAt,
+        settledAt: bet.settledAt ?? null,
       },
       group: {
         id: group._id,
@@ -278,10 +281,8 @@ export const getBet = query({
         color: group.color,
       },
       sides: sides.map((s) => ({ id: s._id, label: s.label })),
-      wagers: wagers
-        .sort((a, b) => a.createdAt - b.createdAt)
-        .map((w) => ({ ...w, user: w.user ? publicUserRef(w.user) : null })),
-      creator: creator ? publicUserRef(creator) : null,
+      wagers: wagers.sort((a, b) => a.createdAt - b.createdAt),
+      creator: creatorDoc,
       myWager,
       myBalance: user.balance,
       isCreator: bet.creatorId === user._id,

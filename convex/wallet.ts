@@ -1,7 +1,7 @@
 import { v } from "convex/values";
-import { query, mutation, action } from "./_generated/server";
+import { query, internalMutation, action } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { requireUser } from "./authHelpers";
+import { requireUser, requireAuth } from "./authHelpers";
 import { creditBalance } from "./groups";
 
 /**
@@ -23,17 +23,18 @@ export type TopUpResult =
 export const topUp = action({
   args: { amount: v.number() },
   handler: async (ctx, args): Promise<TopUpResult> => {
-    const user = await requireUser(ctx);
+    const userId = await requireAuth(ctx);
     if (!Number.isInteger(args.amount) || args.amount < 100)
       throw new Error("Minimum £1");
     if (args.amount > 100000) throw new Error("Maximum £1000");
 
     if (!isLivePayments()) {
       // Mock: credit instantly.
-      const balance = await ctx.runMutation(
-        internal.wallet.creditTopUp,
-        { userId: user._id, amount: args.amount, reference: "mock-topup" },
-      );
+      const balance = await ctx.runMutation(internal.wallet.creditTopUp, {
+        userId,
+        amount: args.amount,
+        reference: "mock-topup",
+      });
       return { mode: "mock", success: true, balance };
     }
 
@@ -44,7 +45,7 @@ export const topUp = action({
       amount: args.amount,
       currency: "gbp",
       automatic_payment_methods: { enabled: true },
-      metadata: { userId: user._id, kind: "topup" },
+      metadata: { userId, kind: "topup" },
     });
     if (!intent.client_secret) throw new Error("Failed to create payment intent");
     return { mode: "live", clientSecret: intent.client_secret, paymentIntentId: intent.id };
@@ -52,7 +53,7 @@ export const topUp = action({
 });
 
 /** Finalise a live top-up once the PaymentIntent succeeds. Idempotent on reference. */
-export const completeTopUp = mutation({
+export const completeTopUp = internalMutation({
   args: {
     userId: v.id("users"),
     amount: v.number(),
@@ -80,7 +81,7 @@ export const completeTopUp = mutation({
 });
 
 /** Internal: credit a mock top-up and return the new balance. */
-export const creditTopUp = mutation({
+export const creditTopUp = internalMutation({
   args: {
     userId: v.id("users"),
     amount: v.number(),

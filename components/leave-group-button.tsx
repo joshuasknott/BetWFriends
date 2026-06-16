@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation } from "convex/react";
 import { Spinner } from "@/components/brand";
+import { asId } from "@/lib/types";
 import { api } from "@/convex/_generated/api";
 
 export function LeaveGroupButton({
@@ -34,7 +35,7 @@ export function LeaveGroupButton({
     setError(null);
     setLoading(true);
     try {
-      await leaveGroup({ groupId: groupId as any });
+      await leaveGroup({ groupId: asId<"groups">(groupId) });
       router.push("/dashboard");
       router.refresh();
     } catch (err) {

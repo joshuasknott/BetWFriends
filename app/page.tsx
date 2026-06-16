@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Logo } from "@/components/brand";
-import { getCurrentUser } from "@/lib/session";
+import { isAuthenticatedNextjs } from "@convex-dev/auth/nextjs/server";
 
 const BET_STORIES = [
   {
@@ -260,7 +260,7 @@ function LiveBetCard() {
 }
 
 export default async function LandingPage() {
-  const user = await getCurrentUser();
+  const user = await isAuthenticatedNextjs();
 
   return (
     <main className="overflow-hidden bg-[#fffefe]">

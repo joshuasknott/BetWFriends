@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query, action } from "./_generated/server";
-import { requireUser } from "./authHelpers";
+import { api } from "./_generated/api";
+import { requireUser, requireAuth } from "./authHelpers";
 import { deleteBetCascade, cancelBetWithRefunds } from "./groups";
 import { retrieveAccount, modifyAccountCredentials } from "@convex-dev/auth/server";
 
@@ -41,16 +42,16 @@ export const getProfileStats = query({
       }),
     );
     const settledBets = await Promise.all(
-      betsCreated.map(async (b) => (b.status === "settled" ? 1 : 0)),
+      betsCreated.map(async (b): Promise<number> => (b.status === "settled" ? 1 : 0)),
     );
 
     return {
       groupsCount: groups.length,
       betsCreatedCount: betsCreated.length,
       wagersCount: wagers.length,
-      settledCount: settledBets.reduce((s, n) => s + n, 0),
+      settledCount: settledBets.reduce<number>((s, n) => s + n, 0),
       totalWagered,
-      totalStakedOnSettled: settledWagers.reduce((s, n) => s + n, 0),
+      totalStakedOnSettled: settledWagers.reduce<number>((s, n) => s + n, 0),
       transactionsCount: transactions.length,
       balance: user.balance,
     };
@@ -85,11 +86,11 @@ export const updateProfile = mutation({
 export const changePassword = action({
   args: { currentPassword: v.string(), newPassword: v.string() },
   handler: async (ctx, args) => {
-    const userId = await requireUser(ctx);
+    await requireAuth(ctx);
     if (args.newPassword.length < 8)
       throw new Error("New password must be at least 8 characters");
 
-    const user = await ctx.db.get(userId);
+    const user = await ctx.runQuery(api.profile.getMe, {});
     if (!user) throw new Error("User not found");
 
     // Verify the current password (retrieveAccount throws on a bad secret).
@@ -103,7 +104,6 @@ export const changePassword = action({
       provider: "password",
       account: { id: user.email, secret: args.newPassword },
     });
-    void userId;
     return { ok: true as const };
   },
 });

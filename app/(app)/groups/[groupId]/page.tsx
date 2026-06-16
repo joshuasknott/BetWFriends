@@ -9,6 +9,7 @@ import { BetHistoryFilter } from "@/components/bet-history-filter";
 import { LeaveGroupButton } from "@/components/leave-group-button";
 import { GroupSettings } from "@/components/group-settings";
 import { relativeTime, formatMoney } from "@/lib/utils";
+import { asId } from "@/lib/types";
 import { computeLeaderboard } from "@/lib/leaderboard";
 import { api } from "@/convex/_generated/api";
 
@@ -25,7 +26,7 @@ export default async function GroupPage({
 
   const [me, group] = await Promise.all([
     fetchQuery(api.profile.getMe, {}, opts),
-    fetchQuery(api.groups.getGroup, { groupId: groupId as any }, opts),
+    fetchQuery(api.groups.getGroup, { groupId: asId<"groups">(groupId) }, opts),
   ]);
 
   if (!group) notFound();
@@ -116,7 +117,7 @@ export default async function GroupPage({
           <GroupSettings
             groupId={group.id}
             initialName={group.name}
-            initialDescription={group.description}
+            initialDescription={group.description ?? null}
             initialEmoji={group.emoji}
             initialColor={group.color}
           />
@@ -222,7 +223,7 @@ export default async function GroupPage({
         <div className="card mt-4 divide-y divide-brand-50">
           {members.map((m) => (
             <div
-              key={m.id}
+              key={m._id}
               className="flex items-center gap-3.5 px-5 py-3.5"
             >
               <Avatar name={m.user.name} color={m.user.avatarColor} size="sm" />

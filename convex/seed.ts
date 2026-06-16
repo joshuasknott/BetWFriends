@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, action, query } from "./_generated/server";
+import { action, internalMutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { createAccount } from "@convex-dev/auth/server";
 import type { Doc, Id } from "./_generated/dataModel";
@@ -30,7 +30,7 @@ const SEED_USERS = [
 ] as const;
 
 /** Wipe all app data tables (auth tables left intact). Dev/seed only. */
-export const wipe = mutation({
+export const wipe = internalMutation({
   args: {},
   handler: async (ctx) => {
     for (const table of [
@@ -49,7 +49,7 @@ export const wipe = mutation({
 });
 
 /** Find a user by email (used to resolve seed IDs after creation). */
-export const userIdByEmail = query({
+export const userIdByEmail = internalQuery({
   args: { email: v.string() },
   handler: async (ctx, args) => {
     const user = await ctx.db
@@ -105,7 +105,7 @@ export const all = action({
 });
 
 /** Set each seed user's balance to its target value (idempotent lookup by email). */
-export const setBalances = mutation({
+export const setBalances = internalMutation({
   args: {},
   handler: async (ctx) => {
     for (const u of SEED_USERS) {
@@ -120,7 +120,7 @@ export const setBalances = mutation({
 });
 
 /** Build groups, bets, wagers, transactions, comments for the seed. */
-export const buildGraph = mutation({
+export const buildGraph = internalMutation({
   args: {},
   handler: async (ctx) => {
     const now = Date.now();

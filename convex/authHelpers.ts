@@ -1,4 +1,4 @@
-import type { QueryCtx, ActionCtx } from "./_generated/server";
+import type { QueryCtx, MutationCtx, ActionCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
@@ -9,31 +9,35 @@ import { getAuthUserId } from "@convex-dev/auth/server";
  * Convex Auth uses `getAuthUserId(ctx)` to read the signed-in user from the
  * request's session; there are no cookies/JWTs to manage here.
  *
- * These accept either a QueryCtx or ActionCtx (both expose `.db` and `.auth`).
+ * Queries and mutations have a `ctx.db`; actions do not, so they should use
+ * `requireAuth` (id only) and `ctx.runQuery` if they need the full user doc.
  */
 
-type AnyCtx = QueryCtx | ActionCtx;
+/** Get the authenticated user id (works in queries, mutations, and actions). */
+export async function requireAuth(
+  ctx: QueryCtx | MutationCtx | ActionCtx,
+): Promise<Id<"users">> {
+  const userId = await getAuthUserId(ctx);
+  if (userId === null) throw new Error("Not authenticated");
+  return userId;
+}
 
+/** Queries/mutations: the current user, or null if not signed in. */
 export async function getCurrentUser(
-  ctx: AnyCtx,
+  ctx: QueryCtx | MutationCtx,
 ): Promise<Doc<"users"> | null> {
   const userId = await getAuthUserId(ctx);
   if (userId === null) return null;
   return ctx.db.get(userId);
 }
 
-/** Throws if the client is not authenticated, returning the user otherwise. */
-export async function requireUser(ctx: AnyCtx): Promise<Doc<"users">> {
+/** Queries/mutations: throws if not authenticated, returns the user otherwise. */
+export async function requireUser(
+  ctx: QueryCtx | MutationCtx,
+): Promise<Doc<"users">> {
   const user = await getCurrentUser(ctx);
   if (!user) throw new Error("Not authenticated");
   return user;
-}
-
-/** Returns the auth user id or throws. Use when you only need the id. */
-export async function requireAuth(ctx: AnyCtx): Promise<Id<"users">> {
-  const userId = await getAuthUserId(ctx);
-  if (userId === null) throw new Error("Not authenticated");
-  return userId;
 }
 
 /**
@@ -41,7 +45,7 @@ export async function requireAuth(ctx: AnyCtx): Promise<Id<"users">> {
  * mirrors the old "Join the group to bet on this" checks.
  */
 export async function requireGroupMember(
-  ctx: QueryCtx,
+  ctx: QueryCtx | MutationCtx,
   userId: Id<"users">,
   groupId: Id<"groups">,
 ): Promise<Doc<"groupMembers">> {

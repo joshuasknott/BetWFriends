@@ -1,7 +1,8 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import type { MutationCtx } from "./_generated/server";
 import { requireUser, publicUserRef } from "./authHelpers";
-import type { Doc } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 
 /**
  * Group functions — ported from the old REST routes under app/api/groups.
@@ -174,8 +175,8 @@ export const leaveGroup = mutation({
 
 /** Credit a user's balance and record a transaction row. */
 export async function creditBalance(
-  ctx: any,
-  userId: Doc<"users">["_id"],
+  ctx: MutationCtx,
+  userId: Id<"users">,
   amount: number,
   type: string,
   note: string,
@@ -196,8 +197,8 @@ export async function creditBalance(
 
 /** Refund a stake to a user (credits balance + records a stake transaction). */
 async function refundStake(
-  ctx: any,
-  userId: Doc<"users">["_id"],
+  ctx: MutationCtx,
+  userId: Id<"users">,
   amount: number,
   note: string,
 ): Promise<void> {
@@ -206,7 +207,7 @@ async function refundStake(
 
 /** Cancel an open bet and refund every wager on it. */
 export async function cancelBetWithRefunds(
-  ctx: any,
+  ctx: MutationCtx,
   bet: Doc<"bets">,
 ): Promise<void> {
   const wagers = await ctx.db
@@ -222,8 +223,8 @@ export async function cancelBetWithRefunds(
 
 /** Delete a bet and all its dependent sides/wagers/comments. */
 export async function deleteBetCascade(
-  ctx: any,
-  betId: Doc<"bets">["_id"],
+  ctx: MutationCtx,
+  betId: Id<"bets">,
 ): Promise<void> {
   const sides = await ctx.db
     .query("betSides")
@@ -266,12 +267,15 @@ export const getGroup = query({
       .query("groupMembers")
       .withIndex("by_group", (q) => q.eq("groupId", args.groupId))
       .collect();
-    const membersWithUsers = await Promise.all(
-      members.map(async (m) => {
-        const u = await ctx.db.get(m.userId);
-        return { ...m, user: u ? publicUserRef(u) : null };
-      }),
-    );
+    const membersWithUsers = (
+      await Promise.all(
+        members.map(async (m) => {
+          const u = await ctx.db.get(m.userId);
+          if (!u) return null;
+          return { ...m, user: publicUserRef(u) };
+        }),
+      )
+    ).filter((m): m is NonNullable<typeof m> => m !== null);
 
     const bets = await ctx.db
       .query("bets")
@@ -302,23 +306,28 @@ export const getGroup = query({
             groupId: bet.groupId,
             creatorId: bet.creatorId,
             title: bet.title,
-            description: bet.description,
+            description: bet.description ?? null,
             amount: bet.amount,
             status: bet.status,
-            outcome: bet.outcome,
+            outcome: bet.outcome ?? null,
             createdAt: bet.createdAt,
             closesAt: bet.closesAt,
-            settledAt: bet.settledAt,
-            sides: sides.map((s) => ({ id: s._id, label: s.label })),
-            wagers: wagers.map((w) => ({
-              id: w._id,
-              sideId: w.sideId,
-              userId: w.userId,
-              amount: w.amount,
-              createdAt: w.createdAt,
-              user: w.user ? publicUserRef(w.user) : null,
-            })),
-            creator: creator ? publicUserRef(creator) : null,
+            settledAt: bet.settledAt ?? null,
+            sides: sides.map((s) => ({ id: s._id, betId: bet._id, label: s.label })),
+            wagers: wagers
+              .filter((w): w is typeof w & { user: NonNullable<typeof w.user> } => w.user !== null)
+              .map((w) => ({
+                id: w._id,
+                betId: w.betId,
+                sideId: w.sideId,
+                userId: w.userId,
+                amount: w.amount,
+                createdAt: w.createdAt,
+                user: publicUserRef(w.user),
+              })),
+            creator: creator
+              ? publicUserRef(creator)
+              : { id: bet.creatorId, name: "Unknown", avatarColor: "#7c3aed" },
           };
         }),
     );
@@ -357,12 +366,15 @@ export const listMyGroups = query({
           .query("groupMembers")
           .withIndex("by_group", (q) => q.eq("groupId", group._id))
           .collect();
-        const membersWithUsers = await Promise.all(
-          members.map(async (mm) => {
-            const u = await ctx.db.get(mm.userId);
-            return { ...mm, user: u ? publicUserRef(u) : null };
-          }),
-        );
+        const membersWithUsers = (
+          await Promise.all(
+            members.map(async (mm) => {
+              const u = await ctx.db.get(mm.userId);
+              if (!u) return null;
+              return { ...mm, user: publicUserRef(u) };
+            }),
+          )
+        ).filter((mm): mm is NonNullable<typeof mm> => mm !== null);
         const bets = await ctx.db
           .query("bets")
           .withIndex("by_group", (q) => q.eq("groupId", group._id))

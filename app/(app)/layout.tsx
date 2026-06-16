@@ -5,6 +5,10 @@ import { fetchQuery } from "convex/nextjs";
 import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
 import { api } from "@/convex/_generated/api";
 
+// All authenticated app routes are dynamic — they depend on the signed-in
+// user and live Convex data, so they must never be statically prerendered.
+export const dynamic = "force-dynamic";
+
 export default async function AppLayout({
   children,
 }: {

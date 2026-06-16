@@ -33,8 +33,8 @@ export function parseMoney(input: string): number | null {
 }
 
 /** Relative time like "in 3h", "2d ago", "now" */
-export function relativeTime(date: Date | string): string {
-  const d = typeof date === "string" ? new Date(date) : date;
+export function relativeTime(date: Date | string | number): string {
+  const d = typeof date === "string" ? new Date(date) : new Date(date);
   const diff = d.getTime() - Date.now();
   const absDiff = Math.abs(diff);
   const future = diff > 0;
@@ -70,8 +70,8 @@ export function relativeTime(date: Date | string): string {
 }
 
 /** Countdown like "03:14:22" for open bets, returns null if closed */
-export function countdown(date: Date | string): string | null {
-  const d = typeof date === "string" ? new Date(date) : date;
+export function countdown(date: Date | string | number): string | null {
+  const d = typeof date === "string" ? new Date(date) : new Date(date);
   const diff = d.getTime() - Date.now();
   if (diff <= 0) return null;
   const totalSec = Math.floor(diff / 1000);
@@ -105,8 +105,8 @@ export function colorFromString(str: string): string {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 }
 
-export function formatDate(date: Date | string): string {
-  const d = typeof date === "string" ? new Date(date) : date;
+export function formatDate(date: Date | string | number): string {
+  const d = typeof date === "string" ? new Date(date) : new Date(date);
   return d.toLocaleDateString("en-GB", {
     day: "numeric",
     month: "short",
@@ -114,8 +114,8 @@ export function formatDate(date: Date | string): string {
   });
 }
 
-export function formatDateTime(date: Date | string): string {
-  const d = typeof date === "string" ? new Date(date) : date;
+export function formatDateTime(date: Date | string | number): string {
+  const d = typeof date === "string" ? new Date(date) : new Date(date);
   return d.toLocaleString("en-GB", {
     day: "numeric",
     month: "short",

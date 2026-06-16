@@ -1,11 +1,14 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { useMutation } from "convex/react";
 import { Spinner, Underline } from "@/components/brand";
 import { api } from "@/convex/_generated/api";
+import { asId } from "@/lib/types";
 import { formatMoney } from "@/lib/utils";
 
 const DURATIONS = [
@@ -56,7 +59,7 @@ export default function NewBetPage() {
     setLoading(true);
     try {
       const result = await createBet({
-        groupId: groupId as any,
+        groupId: asId<"groups">(groupId),
         title,
         description: description || undefined,
         amount: amountPence,

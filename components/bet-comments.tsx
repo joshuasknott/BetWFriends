@@ -4,10 +4,11 @@ import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { Avatar, Spinner } from "@/components/brand";
 import { relativeTime } from "@/lib/utils";
+import { asId } from "@/lib/types";
 import { api } from "@/convex/_generated/api";
 
 export function BetComments({ betId }: { betId: string }) {
-  const comments = useQuery(api.comments.list, { betId: betId as any });
+  const comments = useQuery(api.comments.list, { betId: asId<"bets">(betId) });
   const me = useQuery(api.profile.getMe, {});
   const addComment = useMutation(api.comments.add);
   const removeComment = useMutation(api.comments.remove);
@@ -22,7 +23,7 @@ export function BetComments({ betId }: { betId: string }) {
     setError(null);
     setPosting(true);
     try {
-      await addComment({ betId: betId as any, text });
+      await addComment({ betId: asId<"bets">(betId), text });
       setText("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't post comment");
@@ -33,7 +34,7 @@ export function BetComments({ betId }: { betId: string }) {
 
   async function remove(commentId: string) {
     try {
-      await removeComment({ commentId: commentId as any });
+      await removeComment({ commentId: asId<"comments">(commentId) });
     } catch {
       // ignore
     }

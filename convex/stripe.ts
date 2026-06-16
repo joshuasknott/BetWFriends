@@ -1,6 +1,7 @@
 import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { Doc } from "./_generated/dataModel";
+import type Stripe from "stripe";
 
 /**
  * Stripe webhook — finalises live wallet top-ups.
@@ -22,8 +23,9 @@ export const stripeWebhook = httpAction(async (ctx, request) => {
     });
   }
 
-  const { default: Stripe } = await import("stripe");
-  const stripe = new Stripe(secretKey);
+  const stripeModule = await import("stripe");
+  const StripeCtor = stripeModule.default;
+  const stripe = new StripeCtor(secretKey);
 
   const sig = request.headers.get("stripe-signature");
   if (!sig) {

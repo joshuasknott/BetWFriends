@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation } from "convex/react";
 import { Spinner } from "@/components/brand";
+import { asId } from "@/lib/types";
 import { api } from "@/convex/_generated/api";
 
 const EMOJIS = [
@@ -51,7 +52,7 @@ export function GroupSettings({
     setLoading(true);
     try {
       await updateGroup({
-        groupId: groupId as any,
+        groupId: asId<"groups">(groupId),
         name,
         description,
         emoji,

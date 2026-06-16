@@ -45,3 +45,20 @@ export type WagerLike = {
   amount: number;
   createdAt: number;
 };
+
+/**
+ * Brand a plain string (e.g. a URL param) as a Convex `Id<Table>`.
+ *
+ * Convex IDs are strings at runtime but carry a branded type at the type
+ * level. URL params arrive as `string`, so this helper bridges them into the
+ * generated `api.*` argument types without scattering `as any` casts. It is
+ * a pure cast — no runtime work.
+ *
+ *   placeWager({ betId: asId<"bets">(betId), sideId })
+ */
+export function asId<Table extends string>(
+  id: string,
+): import("convex/values").GenericId<Table> {
+  return id as unknown as import("convex/values").GenericId<Table>;
+}
+

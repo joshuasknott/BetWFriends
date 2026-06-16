@@ -12,11 +12,12 @@ import {
   countdown,
   relativeTime,
 } from "@/lib/utils";
+import { asId } from "@/lib/types";
 import { api } from "@/convex/_generated/api";
 
 export function BetDetailClient({ betId }: { betId: string }) {
   const router = useRouter();
-  const data = useQuery(api.bets.getBet, { betId: betId as any });
+  const data = useQuery(api.bets.getBet, { betId: asId<"bets">(betId) });
   const placeWager = useMutation(api.bets.placeWager);
   const removeWager = useMutation(api.bets.removeWager);
   const settleBet = useMutation(api.bets.resolveBet);
@@ -85,7 +86,7 @@ export function BetDetailClient({ betId }: { betId: string }) {
     }
     setBusy(true);
     try {
-      await placeWager({ betId: betId as any, sideId: sideId as any });
+      await placeWager({ betId: asId<"bets">(betId), sideId: asId<"betSides">(sideId) });
       setToast(myWager ? "Switched sides!" : "You're in! 🎉");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't place bet");
@@ -98,7 +99,7 @@ export function BetDetailClient({ betId }: { betId: string }) {
     setError(null);
     setBusy(true);
     try {
-      await removeWager({ betId: betId as any });
+      await removeWager({ betId: asId<"bets">(betId) });
       setToast("Pulled out — stake refunded");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't pull out");
@@ -112,8 +113,8 @@ export function BetDetailClient({ betId }: { betId: string }) {
     setBusy(true);
     try {
       await settleBet({
-        betId: betId as any,
-        winningSideId: winningSideId as any,
+        betId: asId<"bets">(betId),
+        winningSideId: winningSideId ? asId<"betSides">(winningSideId) : null,
       });
       setToast("Bet settled! 🏆");
       setShowResolve(false);
@@ -130,7 +131,7 @@ export function BetDetailClient({ betId }: { betId: string }) {
     setError(null);
     setBusy(true);
     try {
-      await cancelBetMut({ betId: betId as any });
+      await cancelBetMut({ betId: asId<"bets">(betId) });
       setToast("Bet cancelled — stakes refunded");
       router.refresh();
     } catch (err) {

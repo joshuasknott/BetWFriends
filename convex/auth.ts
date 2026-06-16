@@ -1,4 +1,4 @@
-import Password from "@convex-dev/auth/providers/Password";
+import { Password } from "@convex-dev/auth/providers/Password";
 import { convexAuth } from "@convex-dev/auth/server";
 import { colorFromString } from "../lib/utils";
 
