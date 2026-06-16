@@ -52,7 +52,8 @@ test.describe("Authenticated journey", () => {
     // Click the group card heading, not a bet card that mentions the group name
     await page.getByRole("heading", { name: "Saturday Squad" }).click();
     await expect(page).toHaveURL(/\/groups\//);
-    await expect(page.getByText(/Live bets|Settled|Members/i)).toBeVisible();
+    // Verify a specific section heading is visible
+    await expect(page.getByRole("heading", { name: /Members ·/ })).toBeVisible();
   });
 
   test("wallet shows balance and transactions", async ({ page }) => {
