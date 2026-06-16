@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Logo, Avatar } from "@/components/brand";
 import { NotificationBadge } from "@/components/notification-badge";
-import { api } from "@/lib/api-client";
+import { useAuthActions } from "@convex-dev/auth/react";
 import { formatMoneyShort } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -22,6 +22,7 @@ export function AppHeader({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { signOut } = useAuthActions();
   const [menuOpen, setMenuOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const showCreateGroupCta =
@@ -29,7 +30,7 @@ export function AppHeader({
 
   async function logout() {
     setLoggingOut(true);
-    await api("/api/auth/logout", { method: "POST" });
+    await signOut();
     router.push("/");
     router.refresh();
   }

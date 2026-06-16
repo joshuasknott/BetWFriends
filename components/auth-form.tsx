@@ -4,12 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Logo, BrandBlobs, Spinner, Underline } from "@/components/brand";
-import { api } from "@/lib/api-client";
+import { useAuthActions } from "@convex-dev/auth/react";
 
 type Mode = "login" | "register";
 
 export function AuthForm({ mode }: { mode: Mode }) {
   const router = useRouter();
+  const { signIn } = useAuthActions();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,20 +34,27 @@ export function AuthForm({ mode }: { mode: Mode }) {
     delete payload.ageConfirm;
 
     try {
-      const res = await api(`/api/auth/${mode}`, {
-        method: "POST",
-        body: payload,
+      // Convex Auth: "password" provider handles both sign-up and sign-in.
+      // It throws on bad credentials or a duplicate email.
+      await signIn("password", {
+        email: payload.email,
+        password: payload.password,
+        // `name` is read by the Password provider's `profile` callback on sign-up.
+        name: payload.name ?? "",
+        flow: isRegister ? "signUp" : "signIn",
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "Something went wrong");
-        setLoading(false);
-        return;
-      }
       router.push("/dashboard");
       router.refresh();
-    } catch {
-      setError("Network error — please try again");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Something went wrong";
+      // Convex Auth surfaces duplicate-email / wrong-password errors as messages.
+      setError(
+        isRegister && /exist|already/i.test(message)
+          ? "An account with that email already exists"
+          : !isRegister && /invalid|credential|password/i.test(message)
+            ? "Incorrect email or password"
+            : message,
+      );
       setLoading(false);
     }
   }
