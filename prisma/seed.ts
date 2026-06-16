@@ -12,6 +12,7 @@ async function main() {
   console.log("🌱 Seeding BetWFriends demo data...");
 
   // Wipe existing data (dev only)
+  await prisma.comment.deleteMany();
   await prisma.wager.deleteMany();
   await prisma.betSide.deleteMany();
   await prisma.bet.deleteMany();
@@ -214,6 +215,21 @@ async function main() {
       { userId: josh.id, side: "no" },
     ],
   });
+
+  // Some banter on the first open bet
+  const firstBet = await prisma.bet.findFirst({
+    where: { groupId: squad.id, status: "open" },
+    orderBy: { createdAt: "asc" },
+  });
+  if (firstBet) {
+    await prisma.comment.createMany({
+      data: [
+        { betId: firstBet.id, userId: mark.id, text: "Easy money. He's already three pints in by 9. 💪" },
+        { betId: firstBet.id, userId: jenny.id, text: "Bold of you to assume he even makes it to the match 😂" },
+        { betId: firstBet.id, userId: josh.id, text: "I'm putting my money where my mouth is. NO all day." },
+      ],
+    });
+  }
 
   console.log("✅ Seed complete!");
   console.log("");
