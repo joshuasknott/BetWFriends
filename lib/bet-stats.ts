@@ -1,4 +1,4 @@
-import type { Bet, BetSide, Wager } from "@prisma/client";
+import type { BetLike, BetSideLike, WagerLike } from "@/lib/types";
 
 export type BetStat = {
   id: string;
@@ -15,7 +15,7 @@ export type BetStats = {
 };
 
 export function getBetStats(
-  bet: Bet & { sides: BetSide[]; wagers: Wager[] },
+  bet: BetLike & { sides: BetSideLike[]; wagers: WagerLike[] },
 ): BetStats {
   const sides: BetStat[] = bet.sides.map((s) => {
     const sideWagers = bet.wagers.filter((w) => w.sideId === s.id);

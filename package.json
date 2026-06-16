@@ -17,12 +17,14 @@
     "audit:screens": "node scripts/audit-screens.mjs"
   },
   "dependencies": {
+    "@convex-dev/auth": "^0.0.94",
     "@prisma/adapter-better-sqlite3": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@stripe/stripe-js": "^9.8.0",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.10.1",
     "clsx": "^2.1.1",
+    "convex": "^1.41.0",
     "jose": "^6.2.3",
     "next": "16.2.9",
     "prisma": "^7.8.0",

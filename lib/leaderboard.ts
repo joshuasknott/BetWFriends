@@ -1,4 +1,4 @@
-import type { Bet, Wager, User } from "@prisma/client";
+import type { UserRef } from "@/lib/types";
 
 export type LeaderboardEntry = {
   userId: string;
@@ -18,11 +18,14 @@ export type LeaderboardEntry = {
  * Net profit = total winnings - total stakes (across all settled bets in the group).
  */
 export function computeLeaderboard(
-  bets: (Bet & {
+  bets: {
+    id: string;
+    status: string;
+    outcome: string | null;
     sides: { id: string; label: string }[];
-    wagers: (Wager & { user: { id: string; name: string; avatarColor: string } })[];
-  })[],
-  members: { userId: string; user: Pick<User, "id" | "name" | "avatarColor"> }[],
+    wagers: { sideId: string; userId: string; amount: number; user: UserRef }[];
+  }[],
+  members: { userId: string; user: UserRef }[],
 ): LeaderboardEntry[] {
   const settled = bets.filter((b) => b.status === "settled" && b.outcome);
   const entries = new Map<string, LeaderboardEntry>();
