@@ -149,9 +149,9 @@ export default function PrivacyPage() {
 
       <LegalSection heading="Security">
         <p>
-          We take reasonable measures to protect your data: passwords are hashed
-          with bcrypt, sessions use signed JWT cookies with secure flags, and all
-          traffic is served over HTTPS in production. No method of transmission or
+          We take reasonable measures to protect your data: authentication is
+          handled by Convex Auth, access to app routes is gated, and all traffic
+          is served over HTTPS in production. No method of transmission or
           storage is fully secure, but we work to protect your information.
         </p>
       </LegalSection>

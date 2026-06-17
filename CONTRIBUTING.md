@@ -1,12 +1,12 @@
 # Contributing to BetWFriends
 
-Thanks for your interest in contributing! This guide covers the basics.
+Thanks for your interest in contributing. This guide covers the basics.
 
 ## Prerequisites
 
 - Node.js 20+
 - pnpm 10+ (`npm install -g pnpm`)
-- SQLite (included via `better-sqlite3` — no separate install needed)
+- A Convex deployment for backend data and auth
 
 ## Getting Started
 
@@ -15,36 +15,37 @@ git clone <repo-url>
 cd betwfriends
 pnpm install
 cp .env.example .env
-pnpm run db:migrate
+pnpm run convex
 pnpm run seed
 pnpm run dev
 ```
 
 The app runs at [http://localhost:3000](http://localhost:3000).
+Run `pnpm run convex` in a separate terminal during development.
 
 ## Common Commands
 
 ```bash
-pnpm run dev          # start dev server with hot reload
-pnpm run build        # production build
-pnpm run lint         # ESLint
-pnpm run test         # run unit tests (Vitest)
-pnpm run test:e2e     # run E2E tests (Playwright)
-pnpm run db:migrate   # apply Prisma migrations
-pnpm run seed         # load demo data
-pnpm run db:studio    # open Prisma Studio (DB browser)
+pnpm run dev           # start dev server with hot reload
+pnpm run build         # production build
+pnpm run lint          # ESLint
+pnpm run convex        # run Convex dev backend/codegen
+pnpm run convex:deploy # deploy Convex functions
+pnpm run test          # run unit tests (Vitest)
+pnpm run test:e2e      # run E2E tests (Playwright)
+pnpm run seed          # load demo data
 ```
 
 ## Project Structure
 
-```
+```text
 app/
   (app)/              authenticated routes (dashboard, groups, bets, wallet, profile)
-  api/                API route handlers
+  api/                Convex Auth route handler
   legal/              privacy, terms, responsible play, cookies
 components/           shared React components
-lib/                  server-side libraries (prisma, session, betting, payments, etc.)
-prisma/               schema, migrations, seed
+convex/               backend schema, auth, queries, mutations, actions, seed data
+lib/                  shared betting logic, validation, env, leaderboard, utilities
 tests/
   unit/               Vitest unit tests
   e2e/                Playwright E2E tests
@@ -52,9 +53,8 @@ tests/
 
 ## Code Style
 
-- **No semicolons** — match the existing codebase
-- **Double quotes** for strings
-- TypeScript strict mode — no `any` without justification
+- Double quotes for strings
+- TypeScript strict mode - no `any` without justification
 - Use the `@/` path alias for imports from the project root
 
 ## Making Changes
@@ -74,18 +74,19 @@ tests/
 - **Unit tests** (`tests/unit/`): cover business logic, utilities, validation
 - **E2E tests** (`tests/e2e/`): cover the full user journey in a browser
 
-When adding new API routes or business logic, add corresponding unit tests.
+When adding Convex functions or shared business logic, add corresponding tests.
 
-## Database Changes
+## Convex Changes
 
-1. Edit `prisma/schema.prisma`
-2. Create a migration: `pnpm run db:migrate -- --name your_change`
-3. Update the seed script if needed: `prisma/seed.ts`
-4. Commit both the schema change and the generated migration
+1. Edit `convex/schema.ts` and the relevant Convex function files.
+2. Run `pnpm run convex` so generated types stay current.
+3. Update the seed script if needed: `convex/seed.ts`.
+4. Commit schema, function, generated type, and test changes together.
 
 ## Reporting Issues
 
 Use GitHub Issues. Include:
+
 - Steps to reproduce
 - Expected vs actual behaviour
-- Browser/device if it's a UI issue
+- Browser/device if it is a UI issue

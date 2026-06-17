@@ -10,21 +10,20 @@ settle outcomes transparently. No bookmaker. No house edge. No rake.
 
 - **Private groups** with shareable invite codes
 - **Playful bets** with custom Yes/No sides, stakes, and deadlines
-- **Live wagering** — place, switch, or withdraw wagers while a bet is open
-- **Fair settlement** — winners split the pot proportionally; voids refund everyone
+- **Live wagering** - place, switch, or withdraw wagers while a bet is open
+- **Fair settlement** - winners split the pot proportionally; voids refund everyone
 - **Internal wallet** with demo top-ups or live Stripe payments
 - **Group leaderboard** tracking wins, losses, and net profit
-- **Profile management** — edit name/avatar, change password, delete account (GDPR)
-- **Mobile-first design** with bottom nav bar, PWA installability
-- **Legal compliance** — Privacy Policy, Terms, Responsible Play, Cookie Policy, 18+ enforcement
-- **Security hardened** — CSRF protection, rate limiting, security headers, bcrypt hashing
+- **Profile management** - edit name/avatar, change password, delete account
+- **Mobile-first design** with bottom nav bar and PWA installability
+- **Legal compliance** - Privacy Policy, Terms, Responsible Play, Cookie Policy, 18+ enforcement
+- **Security hardened** - Convex Auth, route gating, rate limiting, and security headers
 
 ## Tech Stack
 
 - **Next.js 16** App Router, **React 19**, **TypeScript**
 - **Tailwind CSS v4** with CSS-based design tokens
-- **Prisma 7** with SQLite (`better-sqlite3`)
-- **JWT sessions** via `jose`, password hashing with `bcryptjs`
+- **Convex** for data, auth, realtime queries, mutations, and HTTP actions
 - **Stripe** for live wallet top-ups (with mock mode for demos)
 - **Vitest** for unit tests, **Playwright** for E2E tests
 
@@ -33,12 +32,14 @@ settle outcomes transparently. No bookmaker. No house edge. No rake.
 ```bash
 pnpm install
 cp .env.example .env
-pnpm run db:migrate
+pnpm run convex
 pnpm run seed
 pnpm run dev
 ```
 
 The app runs at [http://localhost:3000](http://localhost:3000).
+Run `pnpm run convex` in a separate terminal while developing so the Convex
+backend stays available.
 
 ### Demo Accounts
 
@@ -53,16 +54,16 @@ After seeding, sign in with any of these. Password: `password`.
 | `alex@example.com` | Alex Day |
 | `priya@example.com` | Priya Shah |
 
-Demo invite codes: `LUCKY-FOX-42` (Saturday Squad) · `BOLD-BEAR-77` (Flat 4B)
+Demo invite codes: `LUCKY-FOX-42` (Saturday Squad) and `BOLD-BEAR-77` (Flat 4B).
 
 ## Environment
 
 Copy `.env.example` to `.env`:
 
 ```bash
-DATABASE_URL="file:./dev.db"
-SESSION_SECRET="replace-with-a-long-random-secret-at-least-32-characters"
+NEXT_PUBLIC_CONVEX_URL="https://your-deployment.convex.cloud"
 PAYMENT_MODE="mock"
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
 ```
 
 ### Live Stripe Payments
@@ -74,20 +75,21 @@ STRIPE_PUBLISHABLE_KEY="pk_..."
 STRIPE_WEBHOOK_SECRET="whsec_..."
 ```
 
-Register a Stripe webhook for `payment_intent.succeeded` at `/api/stripe/webhook`.
+Register a Stripe webhook for `payment_intent.succeeded` at your Convex HTTP
+action: `https://<deployment>.convex.site/stripe`.
 
 ## Commands
 
 ```bash
-pnpm run dev          # start dev server
-pnpm run build        # production build
-pnpm run start        # run production build
-pnpm run lint         # ESLint
-pnpm run test         # unit tests (Vitest)
-pnpm run test:e2e     # E2E tests (Playwright)
-pnpm run db:migrate   # apply Prisma migrations
-pnpm run seed         # load demo data
-pnpm run db:studio    # open Prisma Studio
+pnpm run dev           # start dev server
+pnpm run build         # production build
+pnpm run start         # run production build
+pnpm run lint          # ESLint
+pnpm run convex        # run Convex dev backend/codegen
+pnpm run convex:deploy # deploy Convex functions
+pnpm run test          # unit tests (Vitest)
+pnpm run test:e2e      # E2E tests (Playwright)
+pnpm run seed          # load demo data
 ```
 
 ## Deployment
@@ -100,30 +102,23 @@ docker compose up -d
 
 # Or build manually
 docker build -t betwfriends .
-docker run -p 3000:3000 -v $(pwd)/data:/app/data \
-  -e SESSION_SECRET="your-secret-at-least-32-chars" \
+docker run -p 3000:3000 \
+  -e NEXT_PUBLIC_CONVEX_URL="https://your-deployment.convex.cloud" \
   betwfriends
 ```
 
-The Docker image uses Next.js standalone output for a minimal size. SQLite data
-persists in the mounted `/app/data` volume.
-
-### Health Check
-
-```bash
-curl http://localhost:3000/api/health
-# {"status":"ok","timestamp":"2026-06-15T22:00:00.000Z","uptime":123.4}
-```
+The Docker image uses Next.js standalone output for a minimal size. The backend
+and persisted data live in Convex, not inside the container.
 
 ### Vercel / Managed Platforms
 
-This app uses SQLite by default. For managed platforms (Vercel, Railway, etc.),
-switch to a managed database by updating the Prisma datasource provider and
-setting `DATABASE_URL` to your connection string.
+Deploy the Convex backend with `pnpm run convex:deploy`, then set
+`NEXT_PUBLIC_CONVEX_URL` on the frontend hosting platform. For live Stripe
+payments, set Stripe secrets as Convex deployment variables.
 
 ## Project Structure
 
-```
+```text
 app/
   page.tsx              marketing landing
   login/ register/      auth screens
@@ -133,26 +128,26 @@ app/
     bets/               bet detail, wagering, settlement
     wallet/             balance, top-up, transactions
     profile/            stats, edit, password, delete account
-  api/                  auth, groups, bets, wallet, profile, stripe, health
+  api/                  Convex Auth route handler
   legal/                privacy, terms, responsible play, cookies
   error.tsx             production error boundary
 components/             shared UI (header, bottom nav, bet cards, forms)
-lib/                    prisma, sessions, betting logic, payments, validation,
-                        env config, CSRF, rate limiting, leaderboard, utils
-prisma/                 schema, migrations, seed
+convex/                 schema, auth, queries, mutations, actions, seed data
+lib/                    pure betting logic, validation, env config,
+                        leaderboard, and shared utilities
 tests/                  unit (Vitest) and e2e (Playwright)
-proxy.ts                security proxy (CSRF, rate limiting) — Next.js 16
+proxy.ts                security proxy and route gating
 ```
 
 ## Testing
 
 ```bash
-pnpm run test           # 65+ unit tests
+pnpm run test           # unit tests
 pnpm run test:e2e       # Playwright E2E (desktop + mobile viewports)
 ```
 
 Unit tests cover: betting payout logic, money/time utilities, validation schemas,
-CSRF token generation/validation, leaderboard computation.
+leaderboard computation, and environment helpers.
 
 E2E tests cover: authentication, group navigation, wallet, profile, legal pages.
 
@@ -172,4 +167,4 @@ or [BeGambleAware](https://www.begambleaware.org).
 
 ## License
 
-Proprietary. © BetWFriends. All rights reserved.
+Proprietary. Copyright BetWFriends. All rights reserved.
