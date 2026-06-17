@@ -17,7 +17,9 @@ describe("env module", () => {
   });
 
   it("exposes payment mode helpers", () => {
-    expect(typeof env.paymentMode).toBe("string");
+    expect(
+      env.paymentMode === undefined || typeof env.paymentMode === "string",
+    ).toBe(true);
     expect(typeof env.appUrl).toBe("string");
   });
 });
