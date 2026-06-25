@@ -66,7 +66,8 @@ export declare const internalMutation: MutationBuilder<DataModel, "internal">;
  *
  * An action is a function which can execute any JavaScript code, including non-deterministic
  * code and code with side-effects, like calling third-party services.
- * They can be allowed to interact with your database indirectly by calling queries and mutations.
+ * They can be run in Convex's JavaScript environment or in Node.js using the "use node" directive.
+ * They can interact with the database indirectly by calling queries and mutations using the {@link ActionCtx}.
  *
  * @param func - The action. It receives an {@link ActionCtx} as its first argument.
  * @returns The wrapped action. Include this as an `export` to name it and make it accessible.
@@ -136,6 +137,7 @@ export type DatabaseReader = GenericDatabaseReader<DataModel>;
  *
  * Convex guarantees that all writes within a single mutation are
  * executed atomically, so you never have to worry about partial writes leaving
- * your data in an inconsistent state.
+ * your data in an inconsistent state. See [the Convex Guide](https://docs.convex.dev/understanding/convex-fundamentals/functions#atomicity-and-optimistic-concurrency-control)
+ * for the guarantees Convex provides your functions.
  */
 export type DatabaseWriter = GenericDatabaseWriter<DataModel>;

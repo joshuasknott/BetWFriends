@@ -16,14 +16,29 @@ import { colorFromString } from "../lib/utils";
 /** Mock/demo mode gives a welcome balance; live mode starts at 0. */
 const WELCOME_BONUS_PENCE = 2000; // £20
 
+type PasswordProfile =
+  | { email: string }
+  | {
+      email: string;
+      name: string;
+      avatarColor: string;
+      balance: number;
+      emailVerificationTime: number;
+      isAnonymous: boolean;
+    };
+
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [
     Password({
       // Normalize + validate on every flow, porting registerSchema rules.
-      profile(params) {
+      profile(params): PasswordProfile {
         const email = String(params.email ?? "").toLowerCase().trim();
+        const flow = String(params.flow ?? "");
         const name = String(params.name ?? "").trim();
         if (!email) throw new Error("Email is required");
+        if (flow !== "signUp") {
+          return { email };
+        }
         if (!name) throw new Error("Tell us your name");
         if (name.length > 40) throw new Error("Name is a bit long");
         return {

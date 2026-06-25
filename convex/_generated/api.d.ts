@@ -15,9 +15,9 @@ import type * as comments from "../comments.js";
 import type * as groups from "../groups.js";
 import type * as http from "../http.js";
 import type * as profile from "../profile.js";
+import type * as seed from "../seed.js";
 import type * as stripe from "../stripe.js";
 import type * as wallet from "../wallet.js";
-import type * as seed from "../seed.js";
 
 import type {
   ApiFromModules,
@@ -33,9 +33,9 @@ declare const fullApi: ApiFromModules<{
   groups: typeof groups;
   http: typeof http;
   profile: typeof profile;
+  seed: typeof seed;
   stripe: typeof stripe;
   wallet: typeof wallet;
-  seed: typeof seed;
 }>;
 
 /**

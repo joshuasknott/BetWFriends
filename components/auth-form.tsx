@@ -36,13 +36,16 @@ export function AuthForm({ mode }: { mode: Mode }) {
     try {
       // Convex Auth: "password" provider handles both sign-up and sign-in.
       // It throws on bad credentials or a duplicate email.
-      await signIn("password", {
+      const authPayload: Record<string, string> = {
         email: payload.email,
         password: payload.password,
-        // `name` is read by the Password provider's `profile` callback on sign-up.
-        name: payload.name ?? "",
         flow: isRegister ? "signUp" : "signIn",
-      });
+      };
+      if (isRegister) {
+        // `name` is read by the Password provider's `profile` callback on sign-up.
+        authPayload.name = payload.name ?? "";
+      }
+      await signIn("password", authPayload);
       router.push("/dashboard");
       router.refresh();
     } catch (err) {

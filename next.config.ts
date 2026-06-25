@@ -1,5 +1,16 @@
 import type { NextConfig } from "next";
 
+const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
+const convexSiteUrl = process.env.NEXT_PUBLIC_CONVEX_SITE_URL;
+const convexConnectSrc = [
+  convexUrl,
+  convexUrl?.replace(/^http/, "ws"),
+  convexSiteUrl,
+  "https://*.convex.cloud",
+  "https://*.convex.site",
+  "wss://*.convex.cloud",
+].filter(Boolean);
+
 const nextConfig: NextConfig = {
   output: "standalone",
   // Keep Turbopack's workspace root scoped to this project.
@@ -48,7 +59,10 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https: blob:",
               "font-src 'self' data:",
-              "connect-src 'self' https://api.stripe.com",
+              [
+                "connect-src 'self' https://api.stripe.com",
+                ...convexConnectSrc,
+              ].join(" "),
               "frame-src https://js.stripe.com https://hooks.stripe.com",
               "base-uri 'self'",
               "form-action 'self'",
